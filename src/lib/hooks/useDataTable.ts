@@ -9,24 +9,28 @@ const useControlledOrInternalState = <K extends keyof DataTableState>(
   key: K,
   controlledState: ControlledDataTableState | undefined,
   onStateChange: (newState: ControlledDataTableState) => void,
-  persistentStateTuple: [DataTableState[K], (value: React.SetStateAction<DataTableState[K]>) => void]
+  persistentStateTuple: [DataTableState[K], (value: React.SetStateAction<DataTableState[K]>) => void],
+  getCurrentState: () => DataTableState
 ): [DataTableState[K], (value: React.SetStateAction<DataTableState[K]>) => void] => {
-  
+
   const [internalState, setInternalState] = persistentStateTuple;
-  
+
   const isControlled = controlledState && controlledState[key] !== undefined;
   const value = (isControlled ? controlledState[key] : internalState) as DataTableState[K];
 
   const setValue = useCallback((updater: React.SetStateAction<DataTableState[K]>) => {
-    const newValue = typeof updater === 'function' 
+    const newValue = typeof updater === 'function'
         ? (updater as (prevState: DataTableState[K]) => DataTableState[K])(value)
         : updater;
-    
+
     if (!isControlled) {
         setInternalState(newValue);
     }
-    onStateChange({ [key]: newValue });
-  }, [isControlled, onStateChange, setInternalState, key, value]);
+
+    // Pass complete state to prevent losing other properties in controlled mode
+    const currentState = getCurrentState();
+    onStateChange({ ...currentState, [key]: newValue });
+  }, [isControlled, onStateChange, setInternalState, key, value, getCurrentState]);
 
   return [value, setValue];
 };
@@ -42,14 +46,34 @@ export const useDataTable = <T,>({
   const onStateChangeCallback = useCallback((newState: ControlledDataTableState) => {
     onStateChange(newState);
   }, [onStateChange]);
-  
-  const [globalFilter, setGlobalFilter] = useControlledOrInternalState('globalFilter', controlledState, onStateChangeCallback, usePersistentState('datatable_globalFilter', initialState.globalFilter ?? ''));
-  const [filters, setFilters] = useControlledOrInternalState('filters', controlledState, onStateChangeCallback, usePersistentState<Filter[]>('datatable_filters', initialState.filters ?? []));
-  const [sorting, setSorting] = useControlledOrInternalState('sorting', controlledState, onStateChangeCallback, usePersistentState<SortConfig<T> | null>('datatable_sorting', initialState.sorting ?? null));
-  const [pageSize, setPageSizeState] = useControlledOrInternalState('pageSize', controlledState, onStateChangeCallback, usePersistentState('datatable_pageSize', initialState.pageSize ?? 10));
-  const [pageIndex, setPageIndexState] = useControlledOrInternalState('pageIndex', controlledState, onStateChangeCallback, useState(initialState.pageIndex ?? 0));
-  const [columnOrder, setColumnOrder] = useControlledOrInternalState('columnOrder', controlledState, onStateChangeCallback, usePersistentState<string[]>('datatable_columnOrder', initialState.columnOrder ?? (() => columns.map(c => c.id))));
-  const [columnVisibility, setColumnVisibility] = useControlledOrInternalState('columnVisibility', controlledState, onStateChangeCallback, usePersistentState<Record<string, boolean>>('datatable_columnVisibility', initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; })));
+
+  // Internal state holders for uncontrolled mode
+  const globalFilterState = usePersistentState('datatable_globalFilter', initialState.globalFilter ?? '');
+  const filtersState = usePersistentState<Filter[]>('datatable_filters', initialState.filters ?? []);
+  const sortingState = usePersistentState<SortConfig<T> | null>('datatable_sorting', initialState.sorting ?? null);
+  const pageSizeState = usePersistentState('datatable_pageSize', initialState.pageSize ?? 10);
+  const pageIndexState = useState(initialState.pageIndex ?? 0);
+  const columnOrderState = usePersistentState<string[]>('datatable_columnOrder', initialState.columnOrder ?? (() => columns.map(c => c.id)));
+  const columnVisibilityState = usePersistentState<Record<string, boolean>>('datatable_columnVisibility', initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; }));
+
+  // Function to get complete current state for controlled mode
+  const getCurrentState = useCallback((): DataTableState => ({
+    globalFilter: controlledState?.globalFilter ?? globalFilterState[0],
+    filters: controlledState?.filters ?? filtersState[0],
+    sorting: controlledState?.sorting ?? sortingState[0],
+    pageSize: controlledState?.pageSize ?? pageSizeState[0],
+    pageIndex: controlledState?.pageIndex ?? pageIndexState[0],
+    columnOrder: controlledState?.columnOrder ?? columnOrderState[0],
+    columnVisibility: controlledState?.columnVisibility ?? columnVisibilityState[0],
+  }), [controlledState, globalFilterState, filtersState, sortingState, pageSizeState, pageIndexState, columnOrderState, columnVisibilityState]);
+
+  const [globalFilter, setGlobalFilter] = useControlledOrInternalState('globalFilter', controlledState, onStateChangeCallback, globalFilterState, getCurrentState);
+  const [filters, setFilters] = useControlledOrInternalState('filters', controlledState, onStateChangeCallback, filtersState, getCurrentState);
+  const [sorting, setSorting] = useControlledOrInternalState('sorting', controlledState, onStateChangeCallback, sortingState, getCurrentState);
+  const [pageSize, setPageSizeState] = useControlledOrInternalState('pageSize', controlledState, onStateChangeCallback, pageSizeState, getCurrentState);
+  const [pageIndex, setPageIndexState] = useControlledOrInternalState('pageIndex', controlledState, onStateChangeCallback, pageIndexState, getCurrentState);
+  const [columnOrder, setColumnOrder] = useControlledOrInternalState('columnOrder', controlledState, onStateChangeCallback, columnOrderState, getCurrentState);
+  const [columnVisibility, setColumnVisibility] = useControlledOrInternalState('columnVisibility', controlledState, onStateChangeCallback, columnVisibilityState, getCurrentState);
 
   // FIX: `sortedData` must be declared before it is used by `pageCount`.
   // The data derivation pipeline is moved up.
