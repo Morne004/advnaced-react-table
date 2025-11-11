@@ -1,5 +1,5 @@
 
-import type { User } from '../../lib/types';
+import type { User } from '../types';
 
 export const generateMockData = (count: number): User[] => {
   const data: User[] = [];

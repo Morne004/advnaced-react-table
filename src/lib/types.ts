@@ -1,22 +1,5 @@
 import React from 'react';
 
-// Data structure from original app
-export interface User {
-  id: number;
-  firstName: string;
-  lastName:string;
-  age: number;
-  email: string;
-  city: string;
-  status: 'active' | 'inactive' | 'pending';
-  company: string;
-  jobTitle: string;
-  country: string;
-  phone: string;
-  joinDate: string;
-  salary: number;
-}
-
 export interface ColumnDef<T> {
   id: string;
   accessorKey?: keyof T;
