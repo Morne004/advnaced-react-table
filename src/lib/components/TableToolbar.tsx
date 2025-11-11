@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent } from 'react';
 import type { TableComponentProps } from '../types';
 import { exportToCsv } from '../utils/csv';
 
@@ -27,11 +27,10 @@ export const TableToolbar = <T extends object>({
     handleGlobalFilterChange,
     allColumns,
     columnVisibility,
-    toggleColumnVisibility
+    toggleColumnVisibility,
+    isCondensed,
+    toggleDensity
   } = table;
-  
-  // Example of internal component state that doesn't need to be in the library's core state
-  const [isCondensed, setIsCondensed] = useState(false);
 
   return (
     <div>
@@ -58,7 +57,7 @@ export const TableToolbar = <T extends object>({
       </div>
       <div>
         <button
-          onClick={() => setIsCondensed(prev => !prev)}
+          onClick={toggleDensity}
           title={isCondensed ? 'Switch to Normal View' : 'Switch to Condensed View'}
         >
           <span>{isCondensed ? 'Normal' : 'Condensed'}</span>

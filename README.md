@@ -403,6 +403,7 @@ All custom components receive a `table` prop containing:
 - `pagination` - `{ pageIndex, pageSize }`
 - `columnOrder` - Array of column IDs in current order
 - `columnVisibility` - Object mapping column IDs to visibility boolean
+- `isCondensed` - Boolean indicating condensed/normal view mode
 
 **Derived Data:**
 - `paginatedData` - Current page of data
@@ -420,6 +421,7 @@ All custom components receive a `table` prop containing:
 - `setPageIndex(index: number)` - Navigate to a page
 - `setColumnOrder(order: string[])` - Reorder columns
 - `toggleColumnVisibility(columnId: string)` - Show/hide a column
+- `toggleDensity()` - Toggle between condensed and normal view
 
 #### Example: Custom Toolbar with Tailwind CSS
 
@@ -604,6 +606,7 @@ The table manages its own state and automatically persists it to `localStorage`.
 - Column order
 - Column visibility
 - Column widths
+- View density (condensed/normal)
 
 **Not persisted:**
 - Current page index (always resets to first page)
@@ -915,6 +918,57 @@ const CustomFilterBuilder = ({ table }) => {
   );
 };
 ```
+
+**Implementing condensed view:**
+
+The library provides built-in support for condensed/normal view density that automatically persists to localStorage.
+
+```tsx
+// In your custom toolbar component
+const MyToolbar = ({ table }) => {
+  const { isCondensed, toggleDensity } = table;
+
+  return (
+    <div>
+      <button onClick={toggleDensity}>
+        {isCondensed ? 'Switch to Normal View' : 'Switch to Condensed View'}
+      </button>
+    </div>
+  );
+};
+
+// In your table rendering (apply conditional styling)
+<table>
+  <thead>
+    <tr>
+      {table.orderedAndVisibleColumns.map(col => (
+        <th
+          key={col.id}
+          className={table.isCondensed ? 'py-2' : 'py-4'}
+        >
+          {col.header}
+        </th>
+      ))}
+    </tr>
+  </thead>
+  <tbody>
+    {table.paginatedData.map(row => (
+      <tr key={row.id}>
+        {table.orderedAndVisibleColumns.map(col => (
+          <td
+            key={col.id}
+            className={table.isCondensed ? 'py-2' : 'py-4'}
+          >
+            {col.cell ? col.cell({ row }) : row[col.accessorKey]}
+          </td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+```
+
+The `isCondensed` state is automatically persisted to localStorage and synced across page reloads.
 
 ### Controlled Mode
 

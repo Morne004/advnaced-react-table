@@ -30,6 +30,7 @@ export interface DataTableState {
   globalFilter: string;
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
+  isCondensed: boolean;
 }
 
 export type ControlledDataTableState = Partial<DataTableState>;

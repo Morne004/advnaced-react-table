@@ -55,6 +55,7 @@ export const useDataTable = <T,>({
   const pageIndexState = useState(initialState.pageIndex ?? 0);
   const columnOrderState = usePersistentState<string[]>('datatable_columnOrder', initialState.columnOrder ?? (() => columns.map(c => c.id)));
   const columnVisibilityState = usePersistentState<Record<string, boolean>>('datatable_columnVisibility', initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; }));
+  const isCondensedState = usePersistentState<boolean>('datatable_isCondensed', initialState.isCondensed ?? false);
 
   // Function to get complete current state for controlled mode
   const getCurrentState = useCallback((): DataTableState => ({
@@ -65,7 +66,8 @@ export const useDataTable = <T,>({
     pageIndex: controlledState?.pageIndex ?? pageIndexState[0],
     columnOrder: controlledState?.columnOrder ?? columnOrderState[0],
     columnVisibility: controlledState?.columnVisibility ?? columnVisibilityState[0],
-  }), [controlledState, globalFilterState, filtersState, sortingState, pageSizeState, pageIndexState, columnOrderState, columnVisibilityState]);
+    isCondensed: controlledState?.isCondensed ?? isCondensedState[0],
+  }), [controlledState, globalFilterState, filtersState, sortingState, pageSizeState, pageIndexState, columnOrderState, columnVisibilityState, isCondensedState]);
 
   const [globalFilter, setGlobalFilter] = useControlledOrInternalState('globalFilter', controlledState, onStateChangeCallback, globalFilterState, getCurrentState);
   const [filters, setFilters] = useControlledOrInternalState('filters', controlledState, onStateChangeCallback, filtersState, getCurrentState);
@@ -74,6 +76,7 @@ export const useDataTable = <T,>({
   const [pageIndex, setPageIndexState] = useControlledOrInternalState('pageIndex', controlledState, onStateChangeCallback, pageIndexState, getCurrentState);
   const [columnOrder, setColumnOrder] = useControlledOrInternalState('columnOrder', controlledState, onStateChangeCallback, columnOrderState, getCurrentState);
   const [columnVisibility, setColumnVisibility] = useControlledOrInternalState('columnVisibility', controlledState, onStateChangeCallback, columnVisibilityState, getCurrentState);
+  const [isCondensed, setIsCondensed] = useControlledOrInternalState('isCondensed', controlledState, onStateChangeCallback, isCondensedState, getCurrentState);
 
   // FIX: `sortedData` must be declared before it is used by `pageCount`.
   // The data derivation pipeline is moved up.
@@ -163,6 +166,10 @@ export const useDataTable = <T,>({
     setColumnVisibility(prev => ({ ...prev, [columnId]: !prev[columnId] }));
   }, [setColumnVisibility]);
 
+  const toggleDensity = useCallback(() => {
+    setIsCondensed(prev => !prev);
+  }, [setIsCondensed]);
+
   const orderedAndVisibleColumns = useMemo(() => {
     return columnOrder
       .map(id => columns.find(c => c.id === id))
@@ -202,10 +209,10 @@ export const useDataTable = <T,>({
 
   return {
     // State
-    globalFilter, filters, sorting, pagination, columnOrder, columnVisibility,
+    globalFilter, filters, sorting, pagination, columnOrder, columnVisibility, isCondensed,
     // Derived Data
     paginatedData, sortedData, pageCount, totalCount: data.length, orderedAndVisibleColumns, allColumns: columns,
     // Handlers
-    handleGlobalFilterChange, applyFilters, setSort, setPageSize, setPageIndex, setColumnOrder, toggleColumnVisibility,
+    handleGlobalFilterChange, applyFilters, setSort, setPageSize, setPageIndex, setColumnOrder, toggleColumnVisibility, toggleDensity,
   };
 };
