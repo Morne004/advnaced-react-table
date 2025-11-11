@@ -1,0 +1,5 @@
+{
+  "name": "Advanced Interactive Data Table",
+  "description": "A reusable, advanced, and interactive data table component for viewing large datasets. Features include a filter builder, global search, advanced pagination, row selection with bulk actions, CSV export, resizable columns, and column sorting.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,54 @@
+{
+  "name": "@Morne004/headless-react-data-table",
+  "private": false,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A lightweight, powerful, and fully headless data table library for React",
+  "keywords": ["react", "table", "data-table", "headless", "typescript", "grid", "datagrid", "sorting", "filtering", "pagination"],
+  "author": "Morne004",
+  "license": "MIT",
+  "homepage": "https://github.com/Morne004/advnaced-react-table#readme",
+  "bugs": {
+    "url": "https://github.com/Morne004/advnaced-react-table/issues"
+  },
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/headless-react-data-table.umd.cjs",
+  "module": "./dist/headless-react-data-table.js",
+  "exports": {
+    ".": {
+      "import": "./dist/headless-react-data-table.js",
+      "require": "./dist/headless-react-data-table.umd.cjs"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Morne004/advnaced-react-table.git"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11",
+    "vite-plugin-dts": "^3.9.1",
+    "react": "^19.0.0-rc-f994737d14-20240522",
+    "react-dom": "^19.0.0-rc-f994737d14-20240522"
+  }
+}
