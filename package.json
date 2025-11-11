@@ -1,10 +1,21 @@
 {
   "name": "@morne004/headless-react-data-table",
   "private": false,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "description": "A lightweight, powerful, and fully headless data table library for React",
-  "keywords": ["react", "table", "data-table", "headless", "typescript", "grid", "datagrid", "sorting", "filtering", "pagination"],
+  "keywords": [
+    "react",
+    "table",
+    "data-table",
+    "headless",
+    "typescript",
+    "grid",
+    "datagrid",
+    "sorting",
+    "filtering",
+    "pagination"
+  ],
   "author": "Morne004",
   "license": "MIT",
   "homepage": "https://github.com/Morne004/advnaced-react-table#readme",
