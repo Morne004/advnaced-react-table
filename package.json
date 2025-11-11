@@ -1,5 +1,5 @@
 {
-  "name": "@Morne004/headless-react-data-table",
+  "name": "@morne004/headless-react-data-table",
   "private": false,
   "version": "1.0.0",
   "type": "module",
@@ -29,9 +29,6 @@
     }
   },
   "types": "./dist/index.d.ts",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Morne004/advnaced-react-table.git"
