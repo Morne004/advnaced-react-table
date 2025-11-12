@@ -540,7 +540,9 @@ export default function MUITable() {
 
 ### REST API Pagination
 
-Complete server-side pagination with sorting and filtering:
+Complete server-side pagination with sorting and filtering.
+
+**Note:** This example uses `manualPagination`, `manualFiltering`, and `manualSorting` to disable client-side data processing. The server handles all filtering, sorting, and pagination logic.
 
 ```tsx
 import { useState, useEffect } from 'react';
@@ -619,6 +621,11 @@ export default function ServerSideTable() {
         isLoading={isLoading}
         state={tableState}
         onStateChange={setTableState}
+        manualPagination={true}
+        manualFiltering={true}
+        manualSorting={true}
+        totalRowCount={totalCount}
+        pageCount={Math.ceil(totalCount / (tableState.pageSize || 25))}
       />
     </div>
   );

@@ -233,11 +233,16 @@ const [tableState, setTableState] = useState({
   pageSize: 25,
   globalFilter: '',
 });
+const [users, setUsers] = useState([]);
+const [totalCount, setTotalCount] = useState(0);
 
 useEffect(() => {
-  fetch(`/api/users?page=${tableState.pageIndex}&search=${tableState.globalFilter}`)
+  fetch(`/api/users?page=${tableState.pageIndex}&pageSize=${tableState.pageSize}&search=${tableState.globalFilter}`)
     .then(res => res.json())
-    .then(data => setUsers(data));
+    .then(response => {
+      setUsers(response.data);      // Current page data (e.g., 25 items)
+      setTotalCount(response.total); // Total count from server (e.g., 1000)
+    });
 }, [tableState]);
 
 <DataTable
@@ -245,8 +250,17 @@ useEffect(() => {
   columns={columns}
   state={tableState}
   onStateChange={setTableState}
+  manualPagination={true}
+  totalRowCount={totalCount}
+  pageCount={Math.ceil(totalCount / tableState.pageSize)}
 />
 ```
+
+**Important:** When using server-side pagination, you must:
+- Set `manualPagination={true}` to disable client-side pagination
+- Provide `totalRowCount` (total items on server)
+- Provide `pageCount` (total pages = `Math.ceil(totalCount / pageSize)`)
+- The `data` prop should contain only the current page's items
 
 ### React Query Integration
 

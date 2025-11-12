@@ -13,7 +13,7 @@ import { TableSkeleton } from './TableSkeleton';
 // Generic type constraint for data with an id
 type DataWithId = { id: number | string };
 
-export const DataTable = <T extends DataWithId>({ 
+export const DataTable = <T extends DataWithId>({
     data,
     columns,
     getRowId = (row) => row.id,
@@ -22,7 +22,12 @@ export const DataTable = <T extends DataWithId>({
     components,
     initialState,
     state: controlledState,
-    onStateChange
+    onStateChange,
+    manualPagination,
+    manualFiltering,
+    manualSorting,
+    totalRowCount,
+    pageCount
 }: DataTableProps<T>) => {
   
   const [showFilters, setShowFilters] = useState(false);
@@ -44,7 +49,18 @@ export const DataTable = <T extends DataWithId>({
     }
   );
 
-  const table = useDataTable({ data, columns, initialState, state: controlledState, onStateChange });
+  const table = useDataTable({
+    data,
+    columns,
+    initialState,
+    state: controlledState,
+    onStateChange,
+    manualPagination,
+    manualFiltering,
+    manualSorting,
+    totalRowCount,
+    pageCount
+  });
   const {
     sorting,
     paginatedData,

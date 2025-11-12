@@ -42,6 +42,11 @@ export const useDataTable = <T,>({
   initialState = {},
   state: controlledState,
   onStateChange = () => {},
+  manualPagination = false,
+  manualFiltering = false,
+  manualSorting = false,
+  totalRowCount,
+  pageCount: controlledPageCount,
 }: Omit<DataTableProps<T>, 'getRowId' | 'components' | 'isLoading' | 'noDataMessage'> & { data: T[]}) => {
   const onStateChangeCallback = useCallback((newState: ControlledDataTableState) => {
     onStateChange(newState);
@@ -81,6 +86,9 @@ export const useDataTable = <T,>({
   // FIX: `sortedData` must be declared before it is used by `pageCount`.
   // The data derivation pipeline is moved up.
   const filteredData = useMemo(() => {
+    // Skip client-side filtering when manualFiltering is enabled
+    if (manualFiltering) return data;
+
     let filtered = [...data];
     if (globalFilter) {
       const lowercasedFilter = globalFilter.toLowerCase();
@@ -113,9 +121,12 @@ export const useDataTable = <T,>({
       );
     }
     return filtered;
-  }, [data, globalFilter, filters, columns]);
+  }, [data, globalFilter, filters, columns, manualFiltering]);
 
   const sortedData = useMemo(() => {
+    // Skip client-side sorting when manualSorting is enabled
+    if (manualSorting) return filteredData;
+
     if (!sorting) return filteredData;
     const { key, direction } = sorting;
     return [...filteredData].sort((a, b) => {
@@ -127,9 +138,12 @@ export const useDataTable = <T,>({
       const comparison = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
       return direction === 'ascending' ? comparison : -comparison;
     });
-  }, [filteredData, sorting]);
+  }, [filteredData, sorting, manualSorting]);
 
-  const pageCount = Math.ceil(sortedData.length / pageSize);
+  // Use controlled pageCount for manual pagination, otherwise compute from data
+  const pageCount = manualPagination && controlledPageCount !== undefined
+    ? controlledPageCount
+    : Math.ceil(sortedData.length / pageSize);
 
   const setPageIndex = (updater: React.SetStateAction<number>) => {
     const newPageIndex = typeof updater === 'function' ? updater(pageIndex) : updater;
@@ -187,9 +201,12 @@ export const useDataTable = <T,>({
   }, [setGlobalFilter, setPageIndex]);
 
   const paginatedData = useMemo(() => {
+    // Skip client-side pagination when manualPagination is enabled - use data as-is from server
+    if (manualPagination) return data;
+
     const start = pageIndex * pageSize;
     return sortedData.slice(start, start + pageSize);
-  }, [sortedData, pageIndex, pageSize]);
+  }, [sortedData, pageIndex, pageSize, manualPagination, data]);
 
   const setSort = useCallback((key: keyof T) => {
     setSorting(prev => {
@@ -207,11 +224,16 @@ export const useDataTable = <T,>({
   
   const pagination = { pageIndex, pageSize };
 
+  // Use controlled totalRowCount for manual pagination, otherwise use data length
+  const totalCount = manualPagination && totalRowCount !== undefined
+    ? totalRowCount
+    : data.length;
+
   return {
     // State
     globalFilter, filters, sorting, pagination, columnOrder, columnVisibility, isCondensed,
     // Derived Data
-    paginatedData, sortedData, pageCount, totalCount: data.length, orderedAndVisibleColumns, allColumns: columns,
+    paginatedData, sortedData, pageCount, totalCount, orderedAndVisibleColumns, allColumns: columns,
     // Handlers
     handleGlobalFilterChange, applyFilters, setSort, setPageSize, setPageIndex, setColumnOrder, toggleColumnVisibility, toggleDensity,
   };

@@ -31,6 +31,13 @@ export interface DataTableState {
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
   isCondensed: boolean;
+
+  // Server-side data management (opt-in)
+  manualPagination?: boolean;
+  manualFiltering?: boolean;
+  manualSorting?: boolean;
+  totalRowCount?: number;
+  pageCount?: number;
 }
 
 export type ControlledDataTableState = Partial<DataTableState>;
@@ -43,15 +50,15 @@ export interface DataTableHandlers {
 export interface DataTableProps<T> {
     data: T[];
     columns: ColumnDef<T>[];
-    
+
     // Configuration
     getRowId?: (row: T) => string | number;
     initialState?: Partial<DataTableState>;
-    
+
     // Data states
     isLoading?: boolean;
     noDataMessage?: React.ReactNode;
-    
+
     // Components override
     components?: {
         Toolbar?: React.ComponentType<TableComponentProps<T>>;
@@ -63,6 +70,13 @@ export interface DataTableProps<T> {
     // Controlled state
     state?: ControlledDataTableState;
     onStateChange?: (state: ControlledDataTableState) => void;
+
+    // Server-side data management (opt-in)
+    manualPagination?: boolean;
+    manualFiltering?: boolean;
+    manualSorting?: boolean;
+    totalRowCount?: number;
+    pageCount?: number;
 }
 
 // Props passed to swappable component slots
