@@ -4,7 +4,6 @@ import type { DataTableProps } from '../types';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useColumnResizing } from '../hooks/useColumnResizing';
 import { useColumnDnd } from '../hooks/useColumnDnd';
-import { usePersistentState } from '../hooks/usePersistentState';
 import { TableToolbar } from './TableToolbar';
 import { FilterBuilder } from './FilterBuilder';
 import { TablePagination } from './TablePagination';
@@ -27,7 +26,9 @@ export const DataTable = <T extends DataWithId>({
     manualFiltering,
     manualSorting,
     totalRowCount,
-    pageCount
+    pageCount,
+    disablePersistence,
+    enableRowSelection = false
 }: DataTableProps<T>) => {
   
   const [showFilters, setShowFilters] = useState(false);
@@ -40,15 +41,6 @@ export const DataTable = <T extends DataWithId>({
     Skeleton = TableSkeleton,
   } = components || {};
 
-  const [columnWidths, setColumnWidths] = usePersistentState<Record<string, number>>(
-    'datatable_columnWidths',
-    () => {
-      const initialWidths: Record<string, number> = {};
-      columns.forEach(c => initialWidths[c.id] = 150);
-      return initialWidths;
-    }
-  );
-
   const table = useDataTable({
     data,
     columns,
@@ -59,7 +51,8 @@ export const DataTable = <T extends DataWithId>({
     manualFiltering,
     manualSorting,
     totalRowCount,
-    pageCount
+    pageCount,
+    disablePersistence
   });
   const {
     sorting,
@@ -67,7 +60,12 @@ export const DataTable = <T extends DataWithId>({
     setSort,
     columnOrder,
     setColumnOrder,
+    columnWidths,
+    setColumnWidths,
     orderedAndVisibleColumns,
+    rowSelection,
+    toggleRowSelection,
+    toggleAllRows,
   } = table;
   
   const columnDropdownRef = useRef<HTMLDivElement>(null);
@@ -76,6 +74,7 @@ export const DataTable = <T extends DataWithId>({
 
   useClickOutside(columnDropdownRef, () => setIsColumnDropdownOpen(false));
 
+  // Initialize column widths for new columns
   useEffect(() => {
     setColumnWidths(currentWidths => {
       const newWidths = { ...currentWidths };
@@ -95,16 +94,31 @@ export const DataTable = <T extends DataWithId>({
   }, [isColumnDropdownOpen]);
   
   const totalWidth = useMemo(() => {
-    return orderedAndVisibleColumns.reduce((total, col) => total + (columnWidths[col.id] || 150), 0);
-  }, [orderedAndVisibleColumns, columnWidths]);
+    const columnsWidth = orderedAndVisibleColumns.reduce((total, col) => total + (columnWidths[col.id] || 150), 0);
+    return enableRowSelection ? columnsWidth + 50 : columnsWidth; // Add 50px for checkbox column
+  }, [orderedAndVisibleColumns, columnWidths, enableRowSelection]);
+
+  // Check if all rows on current page are selected
+  const allRowsSelected = useMemo(() => {
+    if (!enableRowSelection || paginatedData.length === 0) return false;
+    return paginatedData.every(row => rowSelection[String(getRowId(row))]);
+  }, [enableRowSelection, paginatedData, rowSelection, getRowId]);
+
+  // Check if some (but not all) rows are selected
+  const someRowsSelected = useMemo(() => {
+    if (!enableRowSelection || paginatedData.length === 0) return false;
+    const selectedCount = paginatedData.filter(row => rowSelection[String(getRowId(row))]).length;
+    return selectedCount > 0 && selectedCount < paginatedData.length;
+  }, [enableRowSelection, paginatedData, rowSelection, getRowId]);
 
   const colgroup = useMemo(() => (
     <colgroup>
+      {enableRowSelection && <col style={{ width: '50px' }} />}
       {orderedAndVisibleColumns.map(col => (
         <col key={col.id} style={{ width: `${columnWidths[col.id]}px` }} />
       ))}
     </colgroup>
-  ), [orderedAndVisibleColumns, columnWidths]);
+  ), [orderedAndVisibleColumns, columnWidths, enableRowSelection]);
 
   const tableToolbarProps = {
     table, isColumnDropdownOpen, setIsColumnDropdownOpen, columnDropdownRef, showFilters, setShowFilters
@@ -127,6 +141,21 @@ export const DataTable = <T extends DataWithId>({
             {colgroup}
             <thead>
                 <tr>
+                {enableRowSelection && (
+                  <th style={{ width: '50px', textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={allRowsSelected}
+                      ref={input => {
+                        if (input) {
+                          input.indeterminate = someRowsSelected;
+                        }
+                      }}
+                      onChange={toggleAllRows}
+                      aria-label="Select all rows"
+                    />
+                  </th>
+                )}
                 {orderedAndVisibleColumns.map(col => {
                     const isBeingDragged = draggedColumn === col.id;
                     const isDropTarget = dropTarget === col.id;
@@ -183,15 +212,29 @@ export const DataTable = <T extends DataWithId>({
                         </td>
                     </tr>
                 ) : (
-                    paginatedData.map(row => (
-                    <tr key={getRowId(row)}>
-                        {orderedAndVisibleColumns.map(col => (
-                        <td key={col.id}>
-                            {col.cell ? col.cell({ row }) : col.accessorKey ? String(row[col.accessorKey]) : null}
-                        </td>
-                        ))}
-                    </tr>
-                    ))
+                    paginatedData.map(row => {
+                      const rowId = String(getRowId(row));
+                      const isSelected = enableRowSelection && rowSelection[rowId];
+                      return (
+                        <tr key={rowId} style={{ backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.05)' : undefined }}>
+                          {enableRowSelection && (
+                            <td style={{ width: '50px', textAlign: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={!!isSelected}
+                                onChange={() => toggleRowSelection(rowId)}
+                                aria-label={`Select row ${rowId}`}
+                              />
+                            </td>
+                          )}
+                          {orderedAndVisibleColumns.map(col => (
+                            <td key={col.id}>
+                              {col.cell ? col.cell({ row }) : col.accessorKey ? String(row[col.accessorKey]) : null}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })
                 )}
             </tbody>
         </table>
