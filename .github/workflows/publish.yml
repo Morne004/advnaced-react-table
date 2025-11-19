@@ -1,0 +1,163 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for changelog generation
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get package version
+        id: package-version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $PACKAGE_VERSION"
+
+      - name: Check if version exists on npm
+        id: version-check
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+
+          echo "Checking if $PACKAGE_NAME@$PACKAGE_VERSION exists on npm..."
+
+          # Check if version exists on npm registry
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+            echo "Version $PACKAGE_VERSION already exists on npm"
+            echo "should-publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version $PACKAGE_VERSION is new - will publish"
+            echo "should-publish=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        if: steps.version-check.outputs.should-publish == 'true'
+        run: npm ci
+
+      - name: Build package
+        if: steps.version-check.outputs.should-publish == 'true'
+        run: npm run build
+
+      - name: Verify build output
+        if: steps.version-check.outputs.should-publish == 'true'
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory not found after build"
+            exit 1
+          fi
+          echo "Build output verified successfully"
+          ls -lah dist/
+
+      - name: Publish to npm
+        if: steps.version-check.outputs.should-publish == 'true'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create git tag
+        if: steps.version-check.outputs.should-publish == 'true'
+        run: |
+          PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$PACKAGE_VERSION" -m "Release v$PACKAGE_VERSION"
+          git push origin "v$PACKAGE_VERSION"
+
+      - name: Generate changelog
+        if: steps.version-check.outputs.should-publish == 'true'
+        id: changelog
+        run: |
+          PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, using all commits"
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            echo "Generating changelog from $PREV_TAG to HEAD"
+            CHANGELOG=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          # Escape newlines for GitHub Actions output
+          CHANGELOG="${CHANGELOG//'%'/'%25'}"
+          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
+          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: steps.version-check.outputs.should-publish == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}
+          release_name: Release v${{ steps.package-version.outputs.version }}
+          body: |
+            ## What's Changed
+
+            ${{ steps.changelog.outputs.changelog }}
+
+            ## Installation
+
+            ```bash
+            npm install @morne004/headless-react-data-table@${{ steps.package-version.outputs.version }}
+            ```
+
+            ## Links
+
+            - [npm package](https://www.npmjs.com/package/@morne004/headless-react-data-table/v/${{ steps.package-version.outputs.version }})
+            - [Full Changelog](https://github.com/${{ github.repository }}/compare/v${{ steps.package-version.outputs.version }}...main)
+          draft: false
+          prerelease: false
+
+      - name: Summary
+        if: steps.version-check.outputs.should-publish == 'true'
+        run: |
+          PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+          echo "## 🚀 Published Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Package:** @morne004/headless-react-data-table" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** $PACKAGE_VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [npm package](https://www.npmjs.com/package/@morne004/headless-react-data-table/v/$PACKAGE_VERSION)" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v$PACKAGE_VERSION)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Skip publishing
+        if: steps.version-check.outputs.should-publish == 'false'
+        run: |
+          PACKAGE_VERSION="${{ steps.package-version.outputs.version }}"
+          echo "## ⏭️ Skipped Publishing" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Version $PACKAGE_VERSION already exists on npm. No action taken." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To publish a new version, update the version in package.json:" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "npm version patch  # or minor, or major" >> $GITHUB_STEP_SUMMARY
+          echo "git push" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
