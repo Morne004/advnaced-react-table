@@ -30,6 +30,8 @@ export interface DataTableState {
   globalFilter: string;
   columnOrder: string[];
   columnVisibility: Record<string, boolean>;
+  columnWidths: Record<string, number>;
+  rowSelection: Record<string, boolean>;
   isCondensed: boolean;
 
   // Server-side data management (opt-in)
@@ -54,6 +56,8 @@ export interface DataTableProps<T> {
     // Configuration
     getRowId?: (row: T) => string | number;
     initialState?: Partial<DataTableState>;
+    disablePersistence?: boolean;
+    enableRowSelection?: boolean;
 
     // Data states
     isLoading?: boolean;

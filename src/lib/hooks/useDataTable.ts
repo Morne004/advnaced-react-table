@@ -47,20 +47,42 @@ export const useDataTable = <T,>({
   manualSorting = false,
   totalRowCount,
   pageCount: controlledPageCount,
+  disablePersistence = false,
 }: Omit<DataTableProps<T>, 'getRowId' | 'components' | 'isLoading' | 'noDataMessage'> & { data: T[]}) => {
   const onStateChangeCallback = useCallback((newState: ControlledDataTableState) => {
     onStateChange(newState);
   }, [onStateChange]);
 
   // Internal state holders for uncontrolled mode
-  const globalFilterState = usePersistentState('datatable_globalFilter', initialState.globalFilter ?? '');
-  const filtersState = usePersistentState<Filter[]>('datatable_filters', initialState.filters ?? []);
-  const sortingState = usePersistentState<SortConfig<T> | null>('datatable_sorting', initialState.sorting ?? null);
-  const pageSizeState = usePersistentState('datatable_pageSize', initialState.pageSize ?? 10);
+  // Use regular useState when persistence is disabled
+  const globalFilterState = disablePersistence 
+    ? useState(initialState.globalFilter ?? '')
+    : usePersistentState('datatable_globalFilter', initialState.globalFilter ?? '');
+  const filtersState = disablePersistence
+    ? useState<Filter[]>(initialState.filters ?? [])
+    : usePersistentState<Filter[]>('datatable_filters', initialState.filters ?? []);
+  const sortingState = disablePersistence
+    ? useState<SortConfig<T> | null>(initialState.sorting ?? null)
+    : usePersistentState<SortConfig<T> | null>('datatable_sorting', initialState.sorting ?? null);
+  const pageSizeState = disablePersistence
+    ? useState(initialState.pageSize ?? 10)
+    : usePersistentState('datatable_pageSize', initialState.pageSize ?? 10);
   const pageIndexState = useState(initialState.pageIndex ?? 0);
-  const columnOrderState = usePersistentState<string[]>('datatable_columnOrder', initialState.columnOrder ?? (() => columns.map(c => c.id)));
-  const columnVisibilityState = usePersistentState<Record<string, boolean>>('datatable_columnVisibility', initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; }));
-  const isCondensedState = usePersistentState<boolean>('datatable_isCondensed', initialState.isCondensed ?? false);
+  const columnOrderState = disablePersistence
+    ? useState<string[]>(initialState.columnOrder ?? columns.map(c => c.id))
+    : usePersistentState<string[]>('datatable_columnOrder', initialState.columnOrder ?? (() => columns.map(c => c.id)));
+  const columnVisibilityState = disablePersistence
+    ? useState<Record<string, boolean>>(initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; })())
+    : usePersistentState<Record<string, boolean>>('datatable_columnVisibility', initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; }));
+  const columnWidthsState = disablePersistence
+    ? useState<Record<string, number>>(initialState.columnWidths ?? {})
+    : usePersistentState<Record<string, number>>('datatable_columnWidths', initialState.columnWidths ?? {});
+  const rowSelectionState = disablePersistence
+    ? useState<Record<string, boolean>>(initialState.rowSelection ?? {})
+    : usePersistentState<Record<string, boolean>>('datatable_rowSelection', initialState.rowSelection ?? {});
+  const isCondensedState = disablePersistence
+    ? useState<boolean>(initialState.isCondensed ?? false)
+    : usePersistentState<boolean>('datatable_isCondensed', initialState.isCondensed ?? false);
 
   // Function to get complete current state for controlled mode
   const getCurrentState = useCallback((): DataTableState => ({
@@ -71,8 +93,10 @@ export const useDataTable = <T,>({
     pageIndex: controlledState?.pageIndex ?? pageIndexState[0],
     columnOrder: controlledState?.columnOrder ?? columnOrderState[0],
     columnVisibility: controlledState?.columnVisibility ?? columnVisibilityState[0],
+    columnWidths: controlledState?.columnWidths ?? columnWidthsState[0],
+    rowSelection: controlledState?.rowSelection ?? rowSelectionState[0],
     isCondensed: controlledState?.isCondensed ?? isCondensedState[0],
-  }), [controlledState, globalFilterState, filtersState, sortingState, pageSizeState, pageIndexState, columnOrderState, columnVisibilityState, isCondensedState]);
+  }), [controlledState, globalFilterState, filtersState, sortingState, pageSizeState, pageIndexState, columnOrderState, columnVisibilityState, columnWidthsState, rowSelectionState, isCondensedState]);
 
   const [globalFilter, setGlobalFilter] = useControlledOrInternalState('globalFilter', controlledState, onStateChangeCallback, globalFilterState, getCurrentState);
   const [filters, setFilters] = useControlledOrInternalState('filters', controlledState, onStateChangeCallback, filtersState, getCurrentState);
@@ -80,7 +104,9 @@ export const useDataTable = <T,>({
   const [pageSize, setPageSizeState] = useControlledOrInternalState('pageSize', controlledState, onStateChangeCallback, pageSizeState, getCurrentState);
   const [pageIndex, setPageIndexState] = useControlledOrInternalState('pageIndex', controlledState, onStateChangeCallback, pageIndexState, getCurrentState);
   const [columnOrder, setColumnOrder] = useControlledOrInternalState('columnOrder', controlledState, onStateChangeCallback, columnOrderState, getCurrentState);
-  const [columnVisibility, setColumnVisibility] = useControlledOrInternalState('columnVisibility', controlledState, onStateChangeCallback, columnVisibilityState, getCurrentState);
+  const [columnVisibility, setColumnVisibilityInternal] = useControlledOrInternalState('columnVisibility', controlledState, onStateChangeCallback, columnVisibilityState, getCurrentState);
+  const [columnWidths, setColumnWidths] = useControlledOrInternalState('columnWidths', controlledState, onStateChangeCallback, columnWidthsState, getCurrentState);
+  const [rowSelection, setRowSelectionInternal] = useControlledOrInternalState('rowSelection', controlledState, onStateChangeCallback, rowSelectionState, getCurrentState);
   const [isCondensed, setIsCondensed] = useControlledOrInternalState('isCondensed', controlledState, onStateChangeCallback, isCondensedState, getCurrentState);
 
   // FIX: `sortedData` must be declared before it is used by `pageCount`.
@@ -167,22 +193,27 @@ export const useDataTable = <T,>({
       columns.forEach(col => { if (!currentOrderSet.has(col.id)) newOrder.push(col.id); });
       return JSON.stringify(newOrder) !== JSON.stringify(currentOrder) ? newOrder : currentOrder;
     });
-    setColumnVisibility(currentVisibility => {
+    setColumnVisibilityInternal(currentVisibility => {
       const newVisibility = { ...currentVisibility };
       let changed = false;
       Object.keys(newVisibility).forEach(id => { if (!columnIds.has(id)) { delete newVisibility[id]; changed = true; } });
       columns.forEach(col => { if (!(col.id in newVisibility)) { newVisibility[col.id] = true; changed = true; } });
       return changed ? newVisibility : currentVisibility;
     });
-  }, [columns, setColumnOrder, setColumnVisibility]);
+  }, [columns, setColumnOrder, setColumnVisibilityInternal]);
 
   const toggleColumnVisibility = useCallback((columnId: string) => {
-    setColumnVisibility(prev => ({ ...prev, [columnId]: !prev[columnId] }));
-  }, [setColumnVisibility]);
+    setColumnVisibilityInternal(prev => ({ ...prev, [columnId]: !prev[columnId] }));
+  }, [setColumnVisibilityInternal]);
 
   const toggleDensity = useCallback(() => {
     setIsCondensed(prev => !prev);
   }, [setIsCondensed]);
+
+  // Expose setColumnVisibility as a direct setter (not just toggle)
+  const setColumnVisibility = useCallback((visibility: Record<string, boolean>) => {
+    setColumnVisibilityInternal(visibility);
+  }, [setColumnVisibilityInternal]);
 
   const orderedAndVisibleColumns = useMemo(() => {
     return columnOrder
@@ -208,6 +239,42 @@ export const useDataTable = <T,>({
     return sortedData.slice(start, start + pageSize);
   }, [sortedData, pageIndex, pageSize, manualPagination, data]);
 
+  // Row selection handlers
+  const setRowSelection = useCallback((selection: Record<string, boolean>) => {
+    setRowSelectionInternal(selection);
+  }, [setRowSelectionInternal]);
+
+  const toggleRowSelection = useCallback((rowId: string) => {
+    setRowSelectionInternal(prev => ({ ...prev, [rowId]: !prev[rowId] }));
+  }, [setRowSelectionInternal]);
+
+  const toggleAllRows = useCallback(() => {
+    const allSelected = paginatedData.every(row => {
+      const rowId = String((row as any).id);
+      return rowSelection[rowId];
+    });
+    
+    setRowSelectionInternal(prev => {
+      const newSelection = { ...prev };
+      paginatedData.forEach(row => {
+        const rowId = String((row as any).id);
+        newSelection[rowId] = !allSelected;
+      });
+      return newSelection;
+    });
+  }, [paginatedData, rowSelection, setRowSelectionInternal]);
+
+  const getSelectedRows = useCallback(() => {
+    return data.filter(row => {
+      const rowId = String((row as any).id);
+      return rowSelection[rowId];
+    });
+  }, [data, rowSelection]);
+
+  const clearRowSelection = useCallback(() => {
+    setRowSelectionInternal({});
+  }, [setRowSelectionInternal]);
+
   const setSort = useCallback((key: keyof T) => {
     setSorting(prev => {
       if (prev?.key === key) {
@@ -231,10 +298,12 @@ export const useDataTable = <T,>({
 
   return {
     // State
-    globalFilter, filters, sorting, pagination, columnOrder, columnVisibility, isCondensed,
+    globalFilter, filters, sorting, pagination, columnOrder, columnVisibility, columnWidths, rowSelection, isCondensed,
     // Derived Data
     paginatedData, sortedData, pageCount, totalCount, orderedAndVisibleColumns, allColumns: columns,
     // Handlers
-    handleGlobalFilterChange, applyFilters, setSort, setPageSize, setPageIndex, setColumnOrder, toggleColumnVisibility, toggleDensity,
+    handleGlobalFilterChange, applyFilters, setSort, setSorting, setPageSize, setPageIndex, setColumnOrder, setColumnVisibility, setColumnWidths, toggleColumnVisibility, toggleDensity,
+    // Row Selection
+    setRowSelection, toggleRowSelection, toggleAllRows, getSelectedRows, clearRowSelection,
   };
 };
