@@ -15,10 +15,11 @@ import { usePersistentState } from '../hooks/usePersistentState';
 interface DataTableProps<T extends { id: number | string }> {
   data: T[];
   columns: ColumnDef<T>[];
+  enablePersistence?: boolean;
 }
 
-export const DataTable = <T extends { id: number | string },>({ data, columns }: DataTableProps<T>) => {
-  const tableState = useDataTable({ data, columns });
+export const DataTable = <T extends { id: number | string },>({ data, columns, enablePersistence = true }: DataTableProps<T>) => {
+  const tableState = useDataTable({ data, columns, enablePersistence });
   const {
     sorting,
     paginatedData,
@@ -39,7 +40,8 @@ export const DataTable = <T extends { id: number | string },>({ data, columns }:
       const initialWidths: Record<string, number> = {};
       columns.forEach(c => initialWidths[c.id] = 150);
       return initialWidths;
-    }
+    },
+    enablePersistence
   );
 
   const columnDropdownRef = useRef<HTMLDivElement>(null);
