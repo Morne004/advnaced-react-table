@@ -14,16 +14,20 @@ function safelyParseJSON<T>(json: string | null, defaultValue: T): T {
  * A custom hook that provides a `useState`-like interface but persists the state to `localStorage`.
  * @param key - The key to use in localStorage.
  * @param initialValue - The initial value to use if no value is found in localStorage.
+ * @param enablePersistence - Whether to enable localStorage persistence. Defaults to true.
  * @returns A stateful value and a function to update it.
  */
-export const usePersistentState = <T,>(key: string, initialValue: T | (() => T)): [T, Dispatch<SetStateAction<T>>] => {
+export const usePersistentState = <T,>(key: string, initialValue: T | (() => T), enablePersistence: boolean = true): [T, Dispatch<SetStateAction<T>>] => {
   const [storedValue, setStoredValue] = useState<T>(() => {
+    if (!enablePersistence) {
+      return initialValue instanceof Function ? initialValue() : initialValue;
+    }
     try {
       const item = window.localStorage.getItem(key);
       const initial = initialValue instanceof Function ? initialValue() : initialValue;
       return item ? safelyParseJSON<T>(item, initial) : initial;
     } catch (error) {
-      console.warn(`Error reading localStorage key “${key}”:`, error);
+      console.warn(`Error reading localStorage key "${key}":`, error);
       return initialValue instanceof Function ? initialValue() : initialValue;
     }
   });
@@ -32,13 +36,15 @@ export const usePersistentState = <T,>(key: string, initialValue: T | (() => T))
     try {
       setStoredValue(prev => {
           const valueToStore = value instanceof Function ? value(prev) : value;
-          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+          if (enablePersistence) {
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+          }
           return valueToStore;
       });
     } catch (error) {
-      console.warn(`Error setting localStorage key “${key}”:`, error);
+      console.warn(`Error setting localStorage key "${key}":`, error);
     }
-  }, [key]);
+  }, [key, enablePersistence]);
 
   return [storedValue, setValue];
 };
