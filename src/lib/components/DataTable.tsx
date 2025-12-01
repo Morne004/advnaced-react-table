@@ -28,6 +28,8 @@ export const DataTable = <T extends DataWithId>({
     totalRowCount,
     pageCount,
     disablePersistence,
+    disableFilterPersistence,
+    storageKey,
     enableRowSelection = false
 }: DataTableProps<T>) => {
   
@@ -52,7 +54,9 @@ export const DataTable = <T extends DataWithId>({
     manualSorting,
     totalRowCount,
     pageCount,
-    disablePersistence
+    disablePersistence,
+    disableFilterPersistence,
+    storageKey
   });
   const {
     sorting,
