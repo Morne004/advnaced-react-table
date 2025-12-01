@@ -6,31 +6,39 @@ interface UseDataTableProps<T> {
   data: T[];
   columns: ColumnDef<T>[];
   initialPageSize?: number;
+  enablePersistence?: boolean;
+  storageKey?: string;
+  disableFilterPersistence?: boolean;
 }
 
 export const useDataTable = <T extends { id: number | string },>({
   data,
   columns,
   initialPageSize = 10,
+  enablePersistence = true,
+  storageKey = 'datatable',
+  disableFilterPersistence = false,
 }: UseDataTableProps<T>) => {
-  const [globalFilter, setGlobalFilter] = usePersistentState('datatable_globalFilter', '');
-  const [filters, setFilters] = usePersistentState<Filter[]>('datatable_filters', []);
-  const [sorting, setSorting] = usePersistentState<SortConfig<T> | null>('datatable_sorting', null);
+  const [globalFilter, setGlobalFilter] = usePersistentState(`${storageKey}_globalFilter`, '', enablePersistence && !disableFilterPersistence);
+  const [filters, setFilters] = usePersistentState<Filter[]>(`${storageKey}_filters`, [], enablePersistence && !disableFilterPersistence);
+  const [sorting, setSorting] = usePersistentState<SortConfig<T> | null>(`${storageKey}_sorting`, null, enablePersistence);
   
-  const [pageSize, setPageSizeState] = usePersistentState('datatable_pageSize', initialPageSize);
+  const [pageSize, setPageSizeState] = usePersistentState(`${storageKey}_pageSize`, initialPageSize, enablePersistence);
   const [pageIndex, setPageIndex] = useState(0);
 
   const [columnOrder, setColumnOrder] = usePersistentState<string[]>(
-    'datatable_columnOrder',
-    () => columns.map(c => c.id)
+    `${storageKey}_columnOrder`,
+    () => columns.map(c => c.id),
+    enablePersistence
   );
   const [columnVisibility, setColumnVisibility] = usePersistentState<Record<string, boolean>>(
-    'datatable_columnVisibility',
+    `${storageKey}_columnVisibility`,
     () => {
       const visibility: Record<string, boolean> = {};
       columns.forEach(c => (visibility[c.id] = true));
       return visibility;
-    }
+    },
+    enablePersistence
   );
   
   // Reconcile persisted column state when column definitions change

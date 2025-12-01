@@ -15,10 +15,19 @@ import { usePersistentState } from '../hooks/usePersistentState';
 interface DataTableProps<T extends { id: number | string }> {
   data: T[];
   columns: ColumnDef<T>[];
+  enablePersistence?: boolean;
+  storageKey?: string;
+  disableFilterPersistence?: boolean;
 }
 
-export const DataTable = <T extends { id: number | string },>({ data, columns }: DataTableProps<T>) => {
-  const tableState = useDataTable({ data, columns });
+export const DataTable = <T extends { id: number | string },>({ 
+  data, 
+  columns, 
+  enablePersistence = true,
+  storageKey = 'datatable',
+  disableFilterPersistence = false 
+}: DataTableProps<T>) => {
+  const tableState = useDataTable({ data, columns, enablePersistence, storageKey, disableFilterPersistence });
   const {
     sorting,
     paginatedData,
@@ -34,12 +43,13 @@ export const DataTable = <T extends { id: number | string },>({ data, columns }:
   const [isCondensed, setIsCondensed] = useState(false);
   
   const [columnWidths, setColumnWidths] = usePersistentState<Record<string, number>>(
-    'datatable_columnWidths',
+    `${storageKey}_columnWidths`,
     () => {
       const initialWidths: Record<string, number> = {};
       columns.forEach(c => initialWidths[c.id] = 150);
       return initialWidths;
-    }
+    },
+    enablePersistence
   );
 
   const columnDropdownRef = useRef<HTMLDivElement>(null);
