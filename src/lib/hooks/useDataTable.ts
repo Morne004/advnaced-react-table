@@ -63,7 +63,7 @@ export const useDataTable = <T,>({
   const globalFilterState = usePersistentState(
     getStorageKey('globalFilter'),
     initialState.globalFilter ?? '',
-    !disablePersistence
+    !disablePersistence && !disableFilterPersistence
   );
   const filtersState = usePersistentState<Filter[]>(
     getStorageKey('filters'),

@@ -490,10 +490,43 @@ datatable_columnWidths
 datatable_isCondensed
 ```
 
+**Custom storage keys:**
+
+Use `storageKey` to namespace your table state (useful for multiple tables):
+
+```typescript
+<DataTable
+  data={data}
+  columns={columns}
+  storageKey="_matched_Engen"
+/>
+// Creates keys like: _matched_Engen_filters, _matched_Engen_columnOrder, etc.
+```
+
 **Disabling persistence:**
 
-If you don't want localStorage persistence, use controlled mode:
+Option 1: Disable all persistence
+```typescript
+<DataTable
+  data={data}
+  columns={columns}
+  disablePersistence={true}
+/>
+```
 
+Option 2: Disable only filter persistence (useful if you have custom filter management)
+```typescript
+<DataTable
+  data={data}
+  columns={columns}
+  disableFilterPersistence={true}
+  storageKey="_matched_Engen"
+/>
+// Column state still persists, but filters don't
+// Useful when using a separate FilterStorageService
+```
+
+Option 3: Use controlled mode for full control
 ```typescript
 const [tableState, setTableState] = useState({...});
 
