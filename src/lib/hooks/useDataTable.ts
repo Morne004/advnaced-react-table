@@ -48,41 +48,65 @@ export const useDataTable = <T,>({
   totalRowCount,
   pageCount: controlledPageCount,
   disablePersistence = false,
-}: Omit<DataTableProps<T>, 'getRowId' | 'components' | 'isLoading' | 'noDataMessage'> & { data: T[]}) => {
+  disableFilterPersistence = false,
+  storageKey = '',
+  getRowId = (row: T) => String((row as any).id),
+}: Omit<DataTableProps<T>, 'components' | 'isLoading' | 'noDataMessage' | 'enableRowSelection'> & { data: T[]}) => {
   const onStateChangeCallback = useCallback((newState: ControlledDataTableState) => {
     onStateChange(newState);
   }, [onStateChange]);
 
+  // Helper to create storage key with optional prefix
+  const getStorageKey = (key: string) => storageKey ? `${storageKey}_${key}` : `datatable_${key}`;
+
   // Internal state holders for uncontrolled mode
   // Use regular useState when persistence is disabled
-  const globalFilterState = disablePersistence 
-    ? useState(initialState.globalFilter ?? '')
-    : usePersistentState('datatable_globalFilter', initialState.globalFilter ?? '');
-  const filtersState = disablePersistence
-    ? useState<Filter[]>(initialState.filters ?? [])
-    : usePersistentState<Filter[]>('datatable_filters', initialState.filters ?? []);
-  const sortingState = disablePersistence
-    ? useState<SortConfig<T> | null>(initialState.sorting ?? null)
-    : usePersistentState<SortConfig<T> | null>('datatable_sorting', initialState.sorting ?? null);
-  const pageSizeState = disablePersistence
-    ? useState(initialState.pageSize ?? 10)
-    : usePersistentState('datatable_pageSize', initialState.pageSize ?? 10);
+  const globalFilterState = usePersistentState(
+    getStorageKey('globalFilter'),
+    initialState.globalFilter ?? '',
+    !disablePersistence && !disableFilterPersistence
+  );
+  const filtersState = usePersistentState<Filter[]>(
+    getStorageKey('filters'),
+    initialState.filters ?? [],
+    !disablePersistence && !disableFilterPersistence
+  );
+  const sortingState = usePersistentState<SortConfig<T> | null>(
+    getStorageKey('sorting'),
+    initialState.sorting ?? null,
+    !disablePersistence
+  );
+  const pageSizeState = usePersistentState(
+    getStorageKey('pageSize'),
+    initialState.pageSize ?? 10,
+    !disablePersistence
+  );
   const pageIndexState = useState(initialState.pageIndex ?? 0);
-  const columnOrderState = disablePersistence
-    ? useState<string[]>(initialState.columnOrder ?? columns.map(c => c.id))
-    : usePersistentState<string[]>('datatable_columnOrder', initialState.columnOrder ?? (() => columns.map(c => c.id)));
-  const columnVisibilityState = disablePersistence
-    ? useState<Record<string, boolean>>(initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; })())
-    : usePersistentState<Record<string, boolean>>('datatable_columnVisibility', initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; }));
-  const columnWidthsState = disablePersistence
-    ? useState<Record<string, number>>(initialState.columnWidths ?? {})
-    : usePersistentState<Record<string, number>>('datatable_columnWidths', initialState.columnWidths ?? {});
-  const rowSelectionState = disablePersistence
-    ? useState<Record<string, boolean>>(initialState.rowSelection ?? {})
-    : usePersistentState<Record<string, boolean>>('datatable_rowSelection', initialState.rowSelection ?? {});
-  const isCondensedState = disablePersistence
-    ? useState<boolean>(initialState.isCondensed ?? false)
-    : usePersistentState<boolean>('datatable_isCondensed', initialState.isCondensed ?? false);
+  const columnOrderState = usePersistentState<string[]>(
+    getStorageKey('columnOrder'),
+    initialState.columnOrder ?? (() => columns.map(c => c.id)),
+    !disablePersistence
+  );
+  const columnVisibilityState = usePersistentState<Record<string, boolean>>(
+    getStorageKey('columnVisibility'),
+    initialState.columnVisibility ?? (() => { const v: Record<string, boolean> = {}; columns.forEach(c => (v[c.id] = true)); return v; }),
+    !disablePersistence
+  );
+  const columnWidthsState = usePersistentState<Record<string, number>>(
+    getStorageKey('columnWidths'),
+    initialState.columnWidths ?? {},
+    !disablePersistence
+  );
+  const rowSelectionState = usePersistentState<Record<string, boolean>>(
+    getStorageKey('rowSelection'),
+    initialState.rowSelection ?? {},
+    !disablePersistence
+  );
+  const isCondensedState = usePersistentState<boolean>(
+    getStorageKey('isCondensed'),
+    initialState.isCondensed ?? false,
+    !disablePersistence
+  );
 
   // Function to get complete current state for controlled mode
   const getCurrentState = useCallback((): DataTableState => ({
@@ -250,26 +274,26 @@ export const useDataTable = <T,>({
 
   const toggleAllRows = useCallback(() => {
     const allSelected = paginatedData.every(row => {
-      const rowId = String((row as any).id);
+      const rowId = String(getRowId(row));
       return rowSelection[rowId];
     });
     
     setRowSelectionInternal(prev => {
       const newSelection = { ...prev };
       paginatedData.forEach(row => {
-        const rowId = String((row as any).id);
+        const rowId = String(getRowId(row));
         newSelection[rowId] = !allSelected;
       });
       return newSelection;
     });
-  }, [paginatedData, rowSelection, setRowSelectionInternal]);
+  }, [paginatedData, rowSelection, setRowSelectionInternal, getRowId]);
 
   const getSelectedRows = useCallback(() => {
     return data.filter(row => {
-      const rowId = String((row as any).id);
+      const rowId = String(getRowId(row));
       return rowSelection[rowId];
     });
-  }, [data, rowSelection]);
+  }, [data, rowSelection, getRowId]);
 
   const clearRowSelection = useCallback(() => {
     setRowSelectionInternal({});

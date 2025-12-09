@@ -57,6 +57,8 @@ export interface DataTableProps<T> {
     getRowId?: (row: T) => string | number;
     initialState?: Partial<DataTableState>;
     disablePersistence?: boolean;
+    disableFilterPersistence?: boolean;
+    storageKey?: string;
     enableRowSelection?: boolean;
 
     // Data states

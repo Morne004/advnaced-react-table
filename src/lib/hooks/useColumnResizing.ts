@@ -38,7 +38,6 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
 
   // Cleanup function to stop resizing
   const stopResizing = useCallback(() => {
-    resizingColumnRef.current = null;
     setIsResizing(false);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
@@ -49,24 +48,59 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
     handleMouseMoveRef.current(e);
   }, []);
 
-  // Stable wrapper for mouseup - removes stable references (not stale ones)
-  const stableMouseUp = useCallback(() => {
+  // Shared cleanup function to remove all event listeners
+  // Uses refs to avoid circular dependencies
+  const cleanupListeners = useCallback(() => {
+    // Remove all event listeners from both window and document for maximum compatibility
     window.removeEventListener('mousemove', stableMouseMove);
-    window.removeEventListener('mouseup', stableMouseUp);
-    window.removeEventListener('mouseleave', stableMouseUp);
+    window.removeEventListener('mouseup', stableMouseUpRef.current);
+    window.removeEventListener('mouseleave', stableMouseUpRef.current);
+    window.removeEventListener('keydown', stableKeyDownRef.current);
+    document.removeEventListener('mousemove', stableMouseMove);
+    document.removeEventListener('mouseup', stableMouseUpRef.current);
+    document.removeEventListener('keydown', stableKeyDownRef.current);
+    
+    // Reset resizing state
+    resizingColumnRef.current = null;
     stopResizing();
   }, [stableMouseMove, stopResizing]);
 
-  // Cleanup on unmount
+  // Stable wrapper for mouseup - removes stable references (not stale ones)
+  const stableMouseUp = useCallback(() => {
+    cleanupListeners();
+  }, [cleanupListeners]);
+
+  // Stable wrapper for keyboard events - allows canceling resize with Escape key
+  const stableKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && resizingColumnRef.current) {
+      e.preventDefault();
+      cleanupListeners();
+    }
+  }, [cleanupListeners]);
+
+  // Store stable handlers in refs for cleanup
+  const stableMouseUpRef = useRef(stableMouseUp);
+  const stableKeyDownRef = useRef(stableKeyDown);
+  
+  useEffect(() => {
+    stableMouseUpRef.current = stableMouseUp;
+    stableKeyDownRef.current = stableKeyDown;
+  }, [stableMouseUp, stableKeyDown]);
+
+  // Cleanup on unmount - remove all event listeners
   useEffect(() => {
     return () => {
       window.removeEventListener('mousemove', stableMouseMove);
-      window.removeEventListener('mouseup', stableMouseUp);
-      window.removeEventListener('mouseleave', stableMouseUp);
+      window.removeEventListener('mouseup', stableMouseUpRef.current);
+      window.removeEventListener('mouseleave', stableMouseUpRef.current);
+      window.removeEventListener('keydown', stableKeyDownRef.current);
+      document.removeEventListener('mousemove', stableMouseMove);
+      document.removeEventListener('mouseup', stableMouseUpRef.current);
+      document.removeEventListener('keydown', stableKeyDownRef.current);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [stableMouseMove, stableMouseUp]);
+  }, [stableMouseMove]);
 
   const getResizeHandler = (columnId: string, currentWidth: number) => (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -77,10 +111,18 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
     startWidthRef.current = currentWidth;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    
     // Attach stable event handlers that never change reference
+    // Use both window and document for maximum browser compatibility
     window.addEventListener('mousemove', stableMouseMove);
     window.addEventListener('mouseup', stableMouseUp);
     window.addEventListener('mouseleave', stableMouseUp); // Cancel resize if mouse leaves window
+    window.addEventListener('keydown', stableKeyDown); // Allow Escape key to cancel
+    
+    // Document listeners as fallback for edge cases
+    document.addEventListener('mousemove', stableMouseMove);
+    document.addEventListener('mouseup', stableMouseUp);
+    document.addEventListener('keydown', stableKeyDown);
   };
 
   return { isResizing, getResizeHandler };
