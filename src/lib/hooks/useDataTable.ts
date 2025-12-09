@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Filter, SortConfig, ColumnDef, DataTableState, ControlledDataTableState, DataTableProps } from '../types';
 import { usePersistentState } from './usePersistentState';
 
@@ -18,6 +18,18 @@ const useControlledOrInternalState = <K extends keyof DataTableState>(
   const isControlled = controlledState && controlledState[key] !== undefined;
   const value = (isControlled ? controlledState[key] : internalState) as DataTableState[K];
 
+  // Use ref to store latest onStateChange to avoid dependency issues
+  const onStateChangeRef = useRef(onStateChange);
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+  }, [onStateChange]);
+
+  // Use ref to store latest getCurrentState to avoid dependency issues
+  const getCurrentStateRef = useRef(getCurrentState);
+  useEffect(() => {
+    getCurrentStateRef.current = getCurrentState;
+  }, [getCurrentState]);
+
   const setValue = useCallback((updater: React.SetStateAction<DataTableState[K]>) => {
     const newValue = typeof updater === 'function'
         ? (updater as (prevState: DataTableState[K]) => DataTableState[K])(value)
@@ -28,9 +40,9 @@ const useControlledOrInternalState = <K extends keyof DataTableState>(
     }
 
     // Pass complete state to prevent losing other properties in controlled mode
-    const currentState = getCurrentState();
-    onStateChange({ ...currentState, [key]: newValue });
-  }, [isControlled, onStateChange, setInternalState, key, value, getCurrentState]);
+    const currentState = getCurrentStateRef.current();
+    onStateChangeRef.current({ ...currentState, [key]: newValue });
+  }, [isControlled, setInternalState, key, value]);
 
   return [value, setValue];
 };

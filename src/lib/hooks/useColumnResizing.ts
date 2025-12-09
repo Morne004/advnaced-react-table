@@ -36,52 +36,53 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
     handleMouseMoveRef.current = handleMouseMoveCallback;
   }, [handleMouseMoveCallback]);
 
-  // Cleanup function to stop resizing
-  const stopResizing = useCallback(() => {
-    setIsResizing(false);
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  }, []);
-
   // Stable wrapper for mousemove - always uses latest callback from ref
   const stableMouseMove = useCallback((e: MouseEvent) => {
     handleMouseMoveRef.current(e);
   }, []);
 
-  // Shared cleanup function to remove all event listeners
-  // Uses refs to avoid circular dependencies
-  const cleanupListeners = useCallback(() => {
-    // Remove all event listeners from both window and document for maximum compatibility
-    window.removeEventListener('mousemove', stableMouseMove);
-    window.removeEventListener('mouseup', stableMouseUpRef.current);
-    window.removeEventListener('mouseleave', stableMouseUpRef.current);
-    window.removeEventListener('keydown', stableKeyDownRef.current);
-    document.removeEventListener('mousemove', stableMouseMove);
-    document.removeEventListener('mouseup', stableMouseUpRef.current);
-    document.removeEventListener('keydown', stableKeyDownRef.current);
-    
-    // Reset resizing state
+  // Store refs for event handlers to avoid circular dependencies
+  const stableMouseUpRef = useRef<() => void>();
+  const stableKeyDownRef = useRef<(e: KeyboardEvent) => void>();
+
+  // Cleanup function to stop resizing
+  const stopResizing = useCallback(() => {
     resizingColumnRef.current = null;
+    setIsResizing(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []);
+
+  // Stable wrapper for mouseup - removes event listeners and resets state
+  const stableMouseUp = useCallback(() => {
+    // Remove all event listeners from both window and document with capture option
+    const options = { capture: true };
+    
+    window.removeEventListener('mousemove', stableMouseMove, options);
+    if (stableMouseUpRef.current) {
+      window.removeEventListener('mouseup', stableMouseUpRef.current, options);
+      document.removeEventListener('mouseup', stableMouseUpRef.current, options);
+    }
+    if (stableKeyDownRef.current) {
+      window.removeEventListener('keydown', stableKeyDownRef.current, options);
+      document.removeEventListener('keydown', stableKeyDownRef.current, options);
+    }
+    document.removeEventListener('mousemove', stableMouseMove, options);
+    
     stopResizing();
   }, [stableMouseMove, stopResizing]);
-
-  // Stable wrapper for mouseup - removes stable references (not stale ones)
-  const stableMouseUp = useCallback(() => {
-    cleanupListeners();
-  }, [cleanupListeners]);
 
   // Stable wrapper for keyboard events - allows canceling resize with Escape key
   const stableKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && resizingColumnRef.current) {
       e.preventDefault();
-      cleanupListeners();
+      // Call the mouseup handler to clean up
+      if (stableMouseUpRef.current) {
+        stableMouseUpRef.current();
+      }
     }
-  }, [cleanupListeners]);
+  }, []);
 
-  // Store stable handlers in refs for cleanup
-  const stableMouseUpRef = useRef(stableMouseUp);
-  const stableKeyDownRef = useRef(stableKeyDown);
-  
   useEffect(() => {
     stableMouseUpRef.current = stableMouseUp;
     stableKeyDownRef.current = stableKeyDown;
@@ -90,17 +91,22 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
   // Cleanup on unmount - remove all event listeners
   useEffect(() => {
     return () => {
-      window.removeEventListener('mousemove', stableMouseMove);
-      window.removeEventListener('mouseup', stableMouseUpRef.current);
-      window.removeEventListener('mouseleave', stableMouseUpRef.current);
-      window.removeEventListener('keydown', stableKeyDownRef.current);
-      document.removeEventListener('mousemove', stableMouseMove);
-      document.removeEventListener('mouseup', stableMouseUpRef.current);
-      document.removeEventListener('keydown', stableKeyDownRef.current);
+      const options = { capture: true };
+      
+      window.removeEventListener('mousemove', stableMouseMove, options);
+      if (stableMouseUpRef.current) {
+        window.removeEventListener('mouseup', stableMouseUpRef.current, options);
+        document.removeEventListener('mouseup', stableMouseUpRef.current, options);
+      }
+      if (stableKeyDownRef.current) {
+        window.removeEventListener('keydown', stableKeyDownRef.current, options);
+        document.removeEventListener('keydown', stableKeyDownRef.current, options);
+      }
+      document.removeEventListener('mousemove', stableMouseMove, options);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [stableMouseMove]);
+  }, [stableMouseMove, stableMouseUpRef, stableKeyDownRef]);
 
   const getResizeHandler = (columnId: string, currentWidth: number) => (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -112,17 +118,18 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     
-    // Attach stable event handlers that never change reference
-    // Use both window and document for maximum browser compatibility
-    window.addEventListener('mousemove', stableMouseMove);
-    window.addEventListener('mouseup', stableMouseUp);
-    window.addEventListener('mouseleave', stableMouseUp); // Cancel resize if mouse leaves window
-    window.addEventListener('keydown', stableKeyDown); // Allow Escape key to cancel
+    // Use capture phase to ensure we catch the events before anything else
+    // This is critical for catching mouseup when the mouse moves quickly
+    const options = { capture: true };
     
-    // Document listeners as fallback for edge cases
-    document.addEventListener('mousemove', stableMouseMove);
-    document.addEventListener('mouseup', stableMouseUp);
-    document.addEventListener('keydown', stableKeyDown);
+    window.addEventListener('mousemove', stableMouseMove, options);
+    window.addEventListener('mouseup', stableMouseUp, options);
+    window.addEventListener('keydown', stableKeyDown, options);
+    
+    // Document listeners as fallback
+    document.addEventListener('mousemove', stableMouseMove, options);
+    document.addEventListener('mouseup', stableMouseUp, options);
+    document.addEventListener('keydown', stableKeyDown, options);
   };
 
   return { isResizing, getResizeHandler };
