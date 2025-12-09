@@ -50,7 +50,8 @@ export const useDataTable = <T,>({
   disablePersistence = false,
   disableFilterPersistence = false,
   storageKey = '',
-}: Omit<DataTableProps<T>, 'getRowId' | 'components' | 'isLoading' | 'noDataMessage'> & { data: T[]}) => {
+  getRowId = (row: T) => String((row as any).id),
+}: Omit<DataTableProps<T>, 'components' | 'isLoading' | 'noDataMessage' | 'enableRowSelection'> & { data: T[]}) => {
   const onStateChangeCallback = useCallback((newState: ControlledDataTableState) => {
     onStateChange(newState);
   }, [onStateChange]);
@@ -273,26 +274,26 @@ export const useDataTable = <T,>({
 
   const toggleAllRows = useCallback(() => {
     const allSelected = paginatedData.every(row => {
-      const rowId = String((row as any).id);
+      const rowId = String(getRowId(row));
       return rowSelection[rowId];
     });
     
     setRowSelectionInternal(prev => {
       const newSelection = { ...prev };
       paginatedData.forEach(row => {
-        const rowId = String((row as any).id);
+        const rowId = String(getRowId(row));
         newSelection[rowId] = !allSelected;
       });
       return newSelection;
     });
-  }, [paginatedData, rowSelection, setRowSelectionInternal]);
+  }, [paginatedData, rowSelection, setRowSelectionInternal, getRowId]);
 
   const getSelectedRows = useCallback(() => {
     return data.filter(row => {
-      const rowId = String((row as any).id);
+      const rowId = String(getRowId(row));
       return rowSelection[rowId];
     });
-  }, [data, rowSelection]);
+  }, [data, rowSelection, getRowId]);
 
   const clearRowSelection = useCallback(() => {
     setRowSelectionInternal({});

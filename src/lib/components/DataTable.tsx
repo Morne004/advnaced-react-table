@@ -46,6 +46,7 @@ export const DataTable = <T extends DataWithId>({
   const table = useDataTable({
     data,
     columns,
+    getRowId,
     initialState,
     state: controlledState,
     onStateChange,
