@@ -147,21 +147,28 @@ export const useDataTable = <T,>({
 
   // FIX: `sortedData` must be declared before it is used by `pageCount`.
   // The data derivation pipeline is moved up.
+  // Memoize column accessor keys to prevent recalculation
+  const columnAccessorKeys = useMemo(() => 
+    columns.map(col => col.accessorKey).filter(Boolean),
+    [columns]
+  );
+
   const filteredData = useMemo(() => {
     // Skip client-side filtering when manualFiltering is enabled
     if (manualFiltering) return data;
 
-    let filtered = [...data];
+    let filtered = data;
+    
     if (globalFilter) {
       const lowercasedFilter = globalFilter.toLowerCase();
       filtered = filtered.filter(row =>
-        columns.some(col => {
-            if (!col.accessorKey) return false;
-            const value = row[col.accessorKey];
+        columnAccessorKeys.some(accessorKey => {
+            const value = row[accessorKey as keyof T];
             return String(value).toLowerCase().includes(lowercasedFilter);
         })
       );
     }
+    
     if (filters.length > 0) {
       filtered = filtered.filter(row =>
         filters.every(filter => {
@@ -183,7 +190,7 @@ export const useDataTable = <T,>({
       );
     }
     return filtered;
-  }, [data, globalFilter, filters, columns, manualFiltering]);
+  }, [data, globalFilter, filters, columnAccessorKeys, manualFiltering]);
 
   const sortedData = useMemo(() => {
     // Skip client-side sorting when manualSorting is enabled

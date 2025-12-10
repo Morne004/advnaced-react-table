@@ -22,6 +22,7 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
   const resizingColumnRef = useRef<string | null>(null);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Store latest callbacks in refs to avoid stale closure issues
   const handleMouseMoveCallback = useCallback((e: MouseEvent) => {
@@ -55,6 +56,12 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
 
   // Stable wrapper for mouseup - removes event listeners and resets state
   const stableMouseUp = useCallback(() => {
+    // Clear safety timeout
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+    
     // Remove all event listeners from both window and document with capture option
     const options = { capture: true };
     
@@ -117,6 +124,14 @@ export const useColumnResizing = ({ setColumnWidths, minWidth = 80 }: UseColumnR
     startWidthRef.current = currentWidth;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
+    
+    // Safety timeout: forcefully release resize after 1 second as a failsafe
+    safetyTimeoutRef.current = setTimeout(() => {
+      console.warn('Resize safety timeout triggered - forcefully releasing resize');
+      if (stableMouseUpRef.current) {
+        stableMouseUpRef.current();
+      }
+    }, 1000);
     
     // Use capture phase to ensure we catch the events before anything else
     // This is critical for catching mouseup when the mouse moves quickly
