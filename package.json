@@ -1,7 +1,7 @@
 {
   "name": "@morne004/headless-react-data-table",
   "private": false,
-  "version": "1.3.8",
+  "version": "1.3.9",
   "type": "module",
   "description": "A lightweight, powerful, and fully headless data table library for React",
   "keywords": [
