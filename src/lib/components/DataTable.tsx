@@ -4,10 +4,12 @@ import type { DataTableProps } from '../types';
 import { useClickOutside } from '../hooks/useClickOutside';
 import { useColumnResizing } from '../hooks/useColumnResizing';
 import { useColumnDnd } from '../hooks/useColumnDnd';
+import { useTableStickyHeader } from '../hooks/useTableStickyHeader';
 import { TableToolbar } from './TableToolbar';
 import { FilterBuilder } from './FilterBuilder';
 import { TablePagination } from './TablePagination';
 import { TableSkeleton } from './TableSkeleton';
+import { DataTableStickyHeader } from './DataTableStickyHeader';
 
 // Generic type constraint for data with an id
 type DataWithId = { id: number | string };
@@ -39,10 +41,7 @@ const TableHeader = memo(function TableHeader({
   
   const thStyle = useMemo(() => ({
     opacity: isBeingDragged ? 0.5 : 1,
-    backgroundColor: isDropTarget ? 'rgba(59, 130, 246, 0.1)' : undefined,
-    position: 'sticky' as const,
-    top: 0,
-    zIndex: 10
+    backgroundColor: isDropTarget ? 'rgba(59, 130, 246, 0.1)' : undefined
   }), [isBeingDragged, isDropTarget]);
 
   const getSortIcon = useCallback(() => {
@@ -188,7 +187,8 @@ export const DataTable = <T extends DataWithId>({
     disablePersistence,
     disableFilterPersistence,
     storageKey,
-    enableRowSelection = false
+    enableRowSelection = false,
+    enableStickyHeader = true
 }: DataTableProps<T>) => {
   
   const [showFilters, setShowFilters] = useState(false);
@@ -234,6 +234,9 @@ export const DataTable = <T extends DataWithId>({
   const columnDropdownRef = useRef<HTMLDivElement>(null);
   const { isResizing, getResizeHandler } = useColumnResizing({ setColumnWidths });
   const { draggedColumn, dropTarget, getDraggableProps } = useColumnDnd({ columnOrder, setColumnOrder, isResizing });
+
+  const isEmpty = paginatedData.length === 0;
+  const stickyHeader = useTableStickyHeader(isEmpty || !enableStickyHeader);
 
   useClickOutside(columnDropdownRef, () => setIsColumnDropdownOpen(false));
 
@@ -314,13 +317,13 @@ export const DataTable = <T extends DataWithId>({
         <FilterBuilderComponent table={table} showFilters={showFilters}/>
       )}
       
-      <div style={{ maxHeight: '600px', overflowY: 'auto', position: 'relative' }}>
+      <div ref={stickyHeader.mainTableContainerRef} style={{ overflowX: 'auto', position: 'relative' }}>
         <table {...tableProps}>
           {colgroup}
-          <thead>
+          <thead ref={stickyHeader.mainTableHeaderRef}>
             <tr>
               {enableRowSelection && (
-                <th style={{ width: '50px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10 }}>
+                <th style={{ width: '50px', textAlign: 'center' }}>
                   <input
                     type="checkbox"
                     checked={allRowsSelected}
@@ -377,6 +380,28 @@ export const DataTable = <T extends DataWithId>({
       </div>
       
       {!isLoading && paginatedData.length > 0 && <Pagination table={table} />}
+      
+      {enableStickyHeader && (
+        <DataTableStickyHeader
+          showStickyHeader={stickyHeader.showStickyHeader}
+          stickyRect={stickyHeader.stickyRect}
+          orderedAndVisibleColumns={orderedAndVisibleColumns}
+          enableRowSelection={enableRowSelection}
+          allRowsSelected={allRowsSelected}
+          someRowsSelected={someRowsSelected}
+          handleToggleAllRows={handleToggleAllRows}
+          stickyHeaderContainerRef={stickyHeader.stickyHeaderContainerRef}
+          stickyHeaderContentRef={stickyHeader.stickyHeaderContentRef}
+          sorting={sorting}
+          draggedColumn={draggedColumn}
+          dropTarget={dropTarget}
+          isResizing={isResizing}
+          columnWidths={columnWidths}
+          getDraggableProps={getDraggableProps}
+          getResizeHandler={getResizeHandler}
+          handleSort={handleSort}
+        />
+      )}
     </div>
   );
 };

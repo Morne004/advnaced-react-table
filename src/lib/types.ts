@@ -60,6 +60,7 @@ export interface DataTableProps<T> {
     disableFilterPersistence?: boolean;
     storageKey?: string;
     enableRowSelection?: boolean;
+    enableStickyHeader?: boolean;
 
     // Data states
     isLoading?: boolean;
