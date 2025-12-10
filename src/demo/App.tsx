@@ -227,7 +227,9 @@ const StyledTablePagination = <T extends object>({ table }: TableComponentProps<
 }
 
 const App: React.FC = () => {
-  const [tableState, setTableState] = useState<ControlledDataTableState>({});
+  const [tableState, setTableState] = useState<ControlledDataTableState>({
+    pageSize: 100
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulate loading data

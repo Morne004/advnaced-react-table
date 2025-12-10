@@ -39,7 +39,10 @@ const TableHeader = memo(function TableHeader({
   
   const thStyle = useMemo(() => ({
     opacity: isBeingDragged ? 0.5 : 1,
-    backgroundColor: isDropTarget ? 'rgba(59, 130, 246, 0.1)' : undefined
+    backgroundColor: isDropTarget ? 'rgba(59, 130, 246, 0.1)' : undefined,
+    position: 'sticky' as const,
+    top: 0,
+    zIndex: 10
   }), [isBeingDragged, isDropTarget]);
 
   const getSortIcon = useCallback(() => {
@@ -311,13 +314,13 @@ export const DataTable = <T extends DataWithId>({
         <FilterBuilderComponent table={table} showFilters={showFilters}/>
       )}
       
-      <div>
+      <div style={{ maxHeight: '600px', overflowY: 'auto', position: 'relative' }}>
         <table {...tableProps}>
           {colgroup}
           <thead>
             <tr>
               {enableRowSelection && (
-                <th style={{ width: '50px', textAlign: 'center' }}>
+                <th style={{ width: '50px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10 }}>
                   <input
                     type="checkbox"
                     checked={allRowsSelected}
