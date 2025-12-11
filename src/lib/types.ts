@@ -61,6 +61,7 @@ export interface DataTableProps<T> {
     storageKey?: string;
     enableRowSelection?: boolean;
     enableStickyHeader?: boolean;
+    stickyHeaderOffset?: number;
 
     // Data states
     isLoading?: boolean;

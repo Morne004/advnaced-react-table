@@ -239,9 +239,34 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Reusable Data Table (Headless)</h1>
-      <p className="text-gray-600 mb-6">This is a demo of the headless data table library. All styling is applied here in the consumer application.</p>
+    <>
+      {/* Mock Navigation Bar */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '64px',
+        backgroundColor: '#1f2937',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 2rem',
+        zIndex: 100,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>My Application</h1>
+        <nav style={{ marginLeft: 'auto', display: 'flex', gap: '1.5rem' }}>
+          <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Home</a>
+          <a href="#" style={{ color: 'white', textDecoration: 'none' }}>About</a>
+          <a href="#" style={{ color: 'white', textDecoration: 'none' }}>Contact</a>
+        </nav>
+      </div>
+
+      {/* Main Content with top padding to account for fixed nav */}
+      <div className="container mx-auto px-4 py-8" style={{ marginTop: '64px' }}>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Reusable Data Table (Headless)</h1>
+        <p className="text-gray-600 mb-6">This is a demo of the headless data table library with sticky header positioned below the navigation bar.</p>
       
       <div className="p-4 sm:p-6 lg:p-8 bg-white shadow-md rounded-lg">
         {/*
@@ -256,6 +281,8 @@ const App: React.FC = () => {
             isLoading={isLoading}
             state={tableState}
             onStateChange={setTableState}
+            enableStickyHeader={true}
+            stickyHeaderOffset={100}
             noDataMessage={
                 <div className="text-center py-10 text-gray-500">
                     <h3 className="text-lg font-semibold">No Results Found</h3>
@@ -281,7 +308,8 @@ const App: React.FC = () => {
         .data-table-wrapper tr:hover { background-color: #f9fafb; }
         .data-table-wrapper td { font-size: 0.875rem; color: #374151; }
       `}</style>
-    </div>
+      </div>
+    </>
   );
 }
 
