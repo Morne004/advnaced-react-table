@@ -30,6 +30,11 @@ const columns: ColumnDef<User>[] = [
   { id: 'email', accessorKey: 'email', header: 'Email', enableSorting: false },
   { id: 'phone', accessorKey: 'phone', header: 'Phone Number', enableSorting: false },
   { id: 'age', accessorKey: 'age', header: 'Age' },
+  { id: 'city', accessorKey: 'city', header: 'City' },
+  { id: 'country', accessorKey: 'country', header: 'Country' },
+  { id: 'company', accessorKey: 'company', header: 'Company' },
+  { id: 'jobTitle', accessorKey: 'jobTitle', header: 'Job Title' },
+  { id: 'joinDate', accessorKey: 'joinDate', header: 'Join Date' },
   { id: 'salary', accessorKey: 'salary', header: 'Salary', cell: ({ row }) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(row.salary) },
   { id: 'status', accessorKey: 'status', header: 'Status', cell: ({ row }) => {
       const colorMap = { active: 'bg-green-200 text-green-800', inactive: 'bg-red-200 text-red-800', pending: 'bg-yellow-200 text-yellow-800' };
@@ -282,7 +287,7 @@ const App: React.FC = () => {
             state={tableState}
             onStateChange={setTableState}
             enableStickyHeader={true}
-            stickyHeaderOffset={100}
+            stickyHeaderOffset={64}
             noDataMessage={
                 <div className="text-center py-10 text-gray-500">
                     <h3 className="text-lg font-semibold">No Results Found</h3>
