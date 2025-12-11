@@ -70,7 +70,7 @@ jobs:
 
       - name: Publish to npm
         if: steps.version-check.outputs.should-publish == 'true'
-        run: npm publish --access public
+        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
