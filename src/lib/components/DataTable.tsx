@@ -188,7 +188,8 @@ export const DataTable = <T extends DataWithId>({
     disableFilterPersistence,
     storageKey,
     enableRowSelection = false,
-    enableStickyHeader = true
+    enableStickyHeader = true,
+    stickyHeaderOffset = 0
 }: DataTableProps<T>) => {
   
   const [showFilters, setShowFilters] = useState(false);
@@ -236,7 +237,7 @@ export const DataTable = <T extends DataWithId>({
   const { draggedColumn, dropTarget, getDraggableProps } = useColumnDnd({ columnOrder, setColumnOrder, isResizing });
 
   const isEmpty = paginatedData.length === 0;
-  const stickyHeader = useTableStickyHeader(isEmpty || !enableStickyHeader);
+  const stickyHeader = useTableStickyHeader(isEmpty || !enableStickyHeader, stickyHeaderOffset);
 
   useClickOutside(columnDropdownRef, () => setIsColumnDropdownOpen(false));
 

@@ -1,16 +1,14 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 
-const STICKY_TOP_PX = 0; // Distance from top of viewport
-
 interface StickyRect {
   top: number;
   left: number;
   width: number;
 }
 
-export const useTableStickyHeader = (isEmpty: boolean) => {
+export const useTableStickyHeader = (isEmpty: boolean, stickyTopOffset: number = 0) => {
   const [showStickyHeader, setShowStickyHeader] = useState(false);
-  const [stickyRect, setStickyRect] = useState<StickyRect>({ top: STICKY_TOP_PX, left: 0, width: 0 });
+  const [stickyRect, setStickyRect] = useState<StickyRect>({ top: stickyTopOffset, left: 0, width: 0 });
 
   const mainTableContainerRef = useRef<HTMLDivElement>(null);
   const mainTableHeaderRef = useRef<HTMLTableSectionElement>(null);
@@ -44,11 +42,11 @@ export const useTableStickyHeader = (isEmpty: boolean) => {
 
     const rect = container.getBoundingClientRect();
     setStickyRect({
-      top: STICKY_TOP_PX,
+      top: stickyTopOffset,
       left: rect.left,
       width: rect.width,
     });
-  }, []);
+  }, [stickyTopOffset]);
 
   // RequestAnimationFrame loop for smooth scroll sync
   useEffect(() => {
@@ -149,7 +147,7 @@ export const useTableStickyHeader = (isEmpty: boolean) => {
       },
       { 
         threshold: 0, 
-        rootMargin: `-${STICKY_TOP_PX}px 0px 0px 0px` 
+        rootMargin: `-${stickyTopOffset}px 0px 0px 0px` 
       }
     );
 
@@ -158,7 +156,7 @@ export const useTableStickyHeader = (isEmpty: boolean) => {
     return () => {
       observer.disconnect();
     };
-  }, [isEmpty]);
+  }, [isEmpty, stickyTopOffset]);
 
   // Update sticky rect on scroll and resize
   useEffect(() => {
