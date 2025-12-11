@@ -313,12 +313,11 @@ export const DataTable = <T extends DataWithId>({
   return (
     <div>
       <Toolbar {...tableToolbarProps} />
-      
       {showFilters && (
         <FilterBuilderComponent table={table} showFilters={showFilters}/>
       )}
       
-      <div ref={stickyHeader.mainTableContainerRef} style={{ overflowX: 'auto', position: 'relative' }}>
+      <div ref={stickyHeader.mainTableContainerRef} style={{ position: 'relative', width: '100%' }}>
         <table {...tableProps}>
           {colgroup}
           <thead ref={stickyHeader.mainTableHeaderRef}>
