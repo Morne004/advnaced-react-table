@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { DataTable } from './components/DataTable';
-import type { ColumnDef, User } from './types';
+import { DataTable } from './src/lib/components/DataTable';
+import type { ColumnDef, StickyHeaderStyle } from './src/lib/types';
+import type { User } from './types';
 import { generateMockData } from './data/mocks';
 
 const mockData = generateMockData(200);
@@ -29,7 +30,7 @@ const columns: ColumnDef<User>[] = [
     header: 'Email',
     enableSorting: false,
   },
-    {
+  {
     id: 'phone',
     accessorKey: 'phone',
     header: 'Phone Number',
@@ -55,7 +56,7 @@ const columns: ColumnDef<User>[] = [
     accessorKey: 'city',
     header: 'City',
   },
-    {
+  {
     id: 'country',
     accessorKey: 'country',
     header: 'Country',
@@ -92,11 +93,28 @@ const columns: ColumnDef<User>[] = [
   },
 ];
 
+// Define sticky header style with explicit typing
+const customStickyHeaderStyle: StickyHeaderStyle = {
+  headerCellStyle: {
+    textTransform: 'none',  // Remove the ugly uppercase
+    fontSize: '0.875rem',
+    fontWeight: 600,
+  }
+};
+
 const App: React.FC = () => {
+  console.log('App - customStickyHeaderStyle:', customStickyHeaderStyle); // DEBUG
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Advanced Interactive Data Table</h1>
-      <DataTable data={mockData} columns={columns} />
+      <DataTable
+        data={mockData}
+        columns={columns}
+        enableStickyHeader={true}
+        stickyHeaderOffset={0}
+        stickyHeaderStyle={customStickyHeaderStyle}
+      />
     </div>
   );
 }

@@ -44,52 +44,64 @@ export interface DataTableState {
 
 export type ControlledDataTableState = Partial<DataTableState>;
 
+export interface StickyHeaderStyle {
+  /** Styles for the sticky header container */
+  containerStyle?: React.CSSProperties;
+  /** Styles for individual header cells (th elements) */
+  headerCellStyle?: React.CSSProperties;
+  /** Styles for the header text content */
+  headerTextStyle?: React.CSSProperties;
+}
+
 export interface DataTableHandlers {
-    onStateChange?: (newState: Partial<DataTableState>) => void;
+  onStateChange?: (newState: Partial<DataTableState>) => void;
 }
 
 // Props for the main DataTable component
 export interface DataTableProps<T> {
-    data: T[];
-    columns: ColumnDef<T>[];
+  data: T[];
+  columns: ColumnDef<T>[];
 
-    // Configuration
-    getRowId?: (row: T) => string | number;
-    initialState?: Partial<DataTableState>;
-    disablePersistence?: boolean;
-    disableFilterPersistence?: boolean;
-    storageKey?: string;
-    enableRowSelection?: boolean;
+  // Configuration
+  getRowId?: (row: T) => string | number;
+  initialState?: Partial<DataTableState>;
+  disablePersistence?: boolean;
+  disableFilterPersistence?: boolean;
+  storageKey?: string;
+  enableRowSelection?: boolean;
+  enableStickyHeader?: boolean;
+  stickyHeaderOffset?: number;
+  stickyHeaderStyle?: StickyHeaderStyle;
 
-    // Data states
-    isLoading?: boolean;
-    noDataMessage?: React.ReactNode;
+  // Data states
+  isLoading?: boolean;
+  noDataMessage?: React.ReactNode;
 
-    // Components override
-    components?: {
-        Toolbar?: React.ComponentType<TableComponentProps<T>>;
-        Pagination?: React.ComponentType<TableComponentProps<T>>;
-        FilterBuilder?: React.ComponentType<FilterBuilderComponentProps<T>>;
-        Skeleton?: React.ComponentType<{ rows?: number; cols: number; }>;
-    };
+  // Components override
+  components?: {
+    Toolbar?: React.ComponentType<TableComponentProps<T>>;
+    Pagination?: React.ComponentType<TableComponentProps<T>>;
+    FilterBuilder?: React.ComponentType<FilterBuilderComponentProps<T>>;
+    Skeleton?: React.ComponentType<{ rows?: number; cols: number; }>;
+  };
 
-    // Controlled state
-    state?: ControlledDataTableState;
-    onStateChange?: (state: ControlledDataTableState) => void;
+  // Controlled state
+  state?: ControlledDataTableState;
+  onStateChange?: (state: ControlledDataTableState) => void;
 
-    // Server-side data management (opt-in)
-    manualPagination?: boolean;
-    manualFiltering?: boolean;
-    manualSorting?: boolean;
-    totalRowCount?: number;
-    pageCount?: number;
+  // Server-side data management (opt-in)
+  manualPagination?: boolean;
+  manualFiltering?: boolean;
+  manualSorting?: boolean;
+  totalRowCount?: number;
+  pageCount?: number;
 }
 
 // Props passed to swappable component slots
 export interface TableComponentProps<T> {
-    table: ReturnType<typeof import('./hooks/useDataTable').useDataTable<T>>;
+  table: ReturnType<typeof import('./hooks/useDataTable').useDataTable<T>>;
 }
 
 export interface FilterBuilderComponentProps<T> extends TableComponentProps<T> {
-    showFilters: boolean;
+  showFilters: boolean;
 }
