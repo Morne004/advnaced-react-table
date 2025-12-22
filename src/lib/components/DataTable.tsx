@@ -38,7 +38,7 @@ const TableHeader = memo(function TableHeader({
 }) {
   const isBeingDragged = draggedColumn === col.id;
   const isDropTarget = dropTarget === col.id;
-  
+
   const thStyle = useMemo(() => ({
     opacity: isBeingDragged ? 0.5 : 1,
     backgroundColor: isDropTarget ? 'rgba(59, 130, 246, 0.1)' : undefined
@@ -170,33 +170,34 @@ const TableCell = memo(function TableCell({
 });
 
 export const DataTable = <T extends DataWithId>({
-    data,
-    columns,
-    getRowId = (row) => row.id,
-    isLoading = false,
-    noDataMessage = 'No data available.',
-    components,
-    initialState,
-    state: controlledState,
-    onStateChange,
-    manualPagination,
-    manualFiltering,
-    manualSorting,
-    totalRowCount,
-    pageCount,
-    disablePersistence,
-    disableFilterPersistence,
-    storageKey,
-    enableRowSelection = false,
-    enableStickyHeader = true,
-    stickyHeaderOffset = 0
+  data,
+  columns,
+  getRowId = (row) => row.id,
+  isLoading = false,
+  noDataMessage = 'No data available.',
+  components,
+  initialState,
+  state: controlledState,
+  onStateChange,
+  manualPagination,
+  manualFiltering,
+  manualSorting,
+  totalRowCount,
+  pageCount,
+  disablePersistence,
+  disableFilterPersistence,
+  storageKey,
+  enableRowSelection = false,
+  enableStickyHeader = true,
+  stickyHeaderOffset = 0,
+  stickyHeaderStyle
 }: DataTableProps<T>) => {
-  
+
   const [showFilters, setShowFilters] = useState(false);
   const [isColumnDropdownOpen, setIsColumnDropdownOpen] = useState(false);
-  
-  const { 
-    Toolbar = TableToolbar, 
+
+  const {
+    Toolbar = TableToolbar,
     Pagination = TablePagination,
     FilterBuilder: FilterBuilderComponent = FilterBuilder,
     Skeleton = TableSkeleton,
@@ -231,7 +232,7 @@ export const DataTable = <T extends DataWithId>({
     toggleRowSelection,
     toggleAllRows,
   } = table;
-  
+
   const columnDropdownRef = useRef<HTMLDivElement>(null);
   const { isResizing, getResizeHandler } = useColumnResizing({ setColumnWidths });
   const { draggedColumn, dropTarget, getDraggableProps } = useColumnDnd({ columnOrder, setColumnOrder, isResizing });
@@ -247,8 +248,8 @@ export const DataTable = <T extends DataWithId>({
       const newWidths = { ...currentWidths };
       const columnIds = new Set(columns.map(c => c.id));
       let changed = false;
-      Object.keys(newWidths).forEach(id => { if (!columnIds.has(id)) { delete newWidths[id]; changed = true; }});
-      columns.forEach(col => { if (!(col.id in newWidths)) { newWidths[col.id] = 150; changed = true; }});
+      Object.keys(newWidths).forEach(id => { if (!columnIds.has(id)) { delete newWidths[id]; changed = true; } });
+      columns.forEach(col => { if (!(col.id in newWidths)) { newWidths[col.id] = 150; changed = true; } });
       return changed ? newWidths : currentWidths;
     });
   }, [columns, setColumnWidths]);
@@ -259,7 +260,7 @@ export const DataTable = <T extends DataWithId>({
       if (firstItem instanceof HTMLElement) firstItem.focus();
     }
   }, [isColumnDropdownOpen]);
-  
+
   const totalWidth = useMemo(() => {
     const columnsWidth = orderedAndVisibleColumns.reduce((total, col) => total + (columnWidths[col.id] || 150), 0);
     return enableRowSelection ? columnsWidth + 50 : columnsWidth; // Add 50px for checkbox column
@@ -314,9 +315,9 @@ export const DataTable = <T extends DataWithId>({
     <div>
       <Toolbar {...tableToolbarProps} />
       {showFilters && (
-        <FilterBuilderComponent table={table} showFilters={showFilters}/>
+        <FilterBuilderComponent table={table} showFilters={showFilters} />
       )}
-      
+
       <div ref={stickyHeader.mainTableContainerRef} style={{ position: 'relative', width: '100%' }}>
         <table {...tableProps}>
           {colgroup}
@@ -378,9 +379,9 @@ export const DataTable = <T extends DataWithId>({
           </tbody>
         </table>
       </div>
-      
+
       {!isLoading && paginatedData.length > 0 && <Pagination table={table} />}
-      
+
       {enableStickyHeader && (
         <DataTableStickyHeader
           showStickyHeader={stickyHeader.showStickyHeader}
@@ -400,6 +401,7 @@ export const DataTable = <T extends DataWithId>({
           getDraggableProps={getDraggableProps}
           getResizeHandler={getResizeHandler}
           handleSort={handleSort}
+          stickyHeaderStyle={stickyHeaderStyle}
         />
       )}
     </div>

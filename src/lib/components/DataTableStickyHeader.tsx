@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import type { ColumnDef } from '../types';
+import type { ColumnDef, StickyHeaderStyle } from '../types';
 
 interface StickyRect {
   top: number;
@@ -25,6 +25,7 @@ interface DataTableStickyHeaderProps<T> {
   getDraggableProps: (id: string) => any;
   getResizeHandler: (id: string, width: number) => any;
   handleSort: (col: ColumnDef<T>) => void;
+  stickyHeaderStyle?: StickyHeaderStyle;
 }
 
 export const DataTableStickyHeader = memo(function DataTableStickyHeader<T>({
@@ -45,6 +46,7 @@ export const DataTableStickyHeader = memo(function DataTableStickyHeader<T>({
   getDraggableProps,
   getResizeHandler,
   handleSort,
+  stickyHeaderStyle,
 }: DataTableStickyHeaderProps<T>) {
   if (!showStickyHeader) return null;
 
@@ -70,6 +72,7 @@ export const DataTableStickyHeader = memo(function DataTableStickyHeader<T>({
         backgroundColor: 'white',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         overflow: 'hidden',
+        ...stickyHeaderStyle?.containerStyle,
       }}
     >
       <div
@@ -99,7 +102,7 @@ export const DataTableStickyHeader = memo(function DataTableStickyHeader<T>({
               {orderedAndVisibleColumns.map(col => {
                 const isBeingDragged = draggedColumn === col.id;
                 const isDropTarget = dropTarget === col.id;
-                
+
                 return (
                   <th
                     key={col.id}
@@ -116,6 +119,7 @@ export const DataTableStickyHeader = memo(function DataTableStickyHeader<T>({
                       color: '#4b5563',
                       borderBottom: '1px solid #e5e7eb',
                       position: 'relative',
+                      ...stickyHeaderStyle?.headerCellStyle,
                     }}
                     {...getDraggableProps(col.id)}
                   >
@@ -132,7 +136,7 @@ export const DataTableStickyHeader = memo(function DataTableStickyHeader<T>({
                           width: '100%',
                         }}
                       >
-                        <span>{col.header}</span>
+                        <span style={{ ...stickyHeaderStyle?.headerTextStyle }}>{col.header}</span>
                         <span style={{ marginLeft: '0.25rem' }}>{getSortIcon(col)}</span>
                       </button>
                       <div
