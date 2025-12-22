@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DataTable } from '../lib/components/DataTable';
-import type { ColumnDef, TableComponentProps, FilterBuilderComponentProps, ControlledDataTableState, StickyHeaderStyle } from '../lib/types';
+import type { ColumnDef, TableComponentProps, FilterBuilderComponentProps, ControlledDataTableState } from '../lib/types';
 import type { User } from './types';
 import { generateMockData } from './data/mocks';
 import { exportToCsv } from '../lib/utils/csv';
