@@ -243,7 +243,7 @@ export const useDataTable = <T,>({
       columns.forEach(col => { if (!(col.id in newVisibility)) { newVisibility[col.id] = true; changed = true; } });
       return changed ? newVisibility : currentVisibility;
     });
-  }, [columns]);
+  }, [columns, setColumnOrder, setColumnVisibilityInternal]);
 
   const toggleColumnVisibility = useCallback((columnId: string) => {
     setColumnVisibilityInternal(prev => ({ ...prev, [columnId]: !prev[columnId] }));
