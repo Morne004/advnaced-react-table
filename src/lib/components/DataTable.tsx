@@ -252,7 +252,7 @@ export const DataTable = <T extends DataWithId>({
       columns.forEach(col => { if (!(col.id in newWidths)) { newWidths[col.id] = 150; changed = true; } });
       return changed ? newWidths : currentWidths;
     });
-  }, [columns]);
+  }, [columns, setColumnWidths]);
 
   useEffect(() => {
     if (isColumnDropdownOpen) {
