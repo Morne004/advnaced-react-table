@@ -32,11 +32,11 @@ const useControlledOrInternalState = <K extends keyof DataTableState>(
 
   const setValue = useCallback((updater: React.SetStateAction<DataTableState[K]>) => {
     const newValue = typeof updater === 'function'
-        ? (updater as (prevState: DataTableState[K]) => DataTableState[K])(value)
-        : updater;
+      ? (updater as (prevState: DataTableState[K]) => DataTableState[K])(value)
+      : updater;
 
     if (!isControlled) {
-        setInternalState(newValue);
+      setInternalState(newValue);
     }
 
     // Pass complete state to prevent losing other properties in controlled mode
@@ -53,7 +53,7 @@ export const useDataTable = <T,>({
   columns,
   initialState = {},
   state: controlledState,
-  onStateChange = () => {},
+  onStateChange = () => { },
   manualPagination = false,
   manualFiltering = false,
   manualSorting = false,
@@ -63,7 +63,7 @@ export const useDataTable = <T,>({
   disableFilterPersistence = false,
   storageKey = '',
   getRowId = (row: T) => String((row as any).id),
-}: Omit<DataTableProps<T>, 'components' | 'isLoading' | 'noDataMessage' | 'enableRowSelection'> & { data: T[]}) => {
+}: Omit<DataTableProps<T>, 'components' | 'isLoading' | 'noDataMessage' | 'enableRowSelection'> & { data: T[] }) => {
   const onStateChangeCallback = useCallback((newState: ControlledDataTableState) => {
     onStateChange(newState);
   }, [onStateChange]);
@@ -148,7 +148,7 @@ export const useDataTable = <T,>({
   // FIX: `sortedData` must be declared before it is used by `pageCount`.
   // The data derivation pipeline is moved up.
   // Memoize column accessor keys to prevent recalculation
-  const columnAccessorKeys = useMemo(() => 
+  const columnAccessorKeys = useMemo(() =>
     columns.map(col => col.accessorKey).filter(Boolean),
     [columns]
   );
@@ -158,17 +158,17 @@ export const useDataTable = <T,>({
     if (manualFiltering) return data;
 
     let filtered = data;
-    
+
     if (globalFilter) {
       const lowercasedFilter = globalFilter.toLowerCase();
       filtered = filtered.filter(row =>
         columnAccessorKeys.some(accessorKey => {
-            const value = row[accessorKey as keyof T];
-            return String(value).toLowerCase().includes(lowercasedFilter);
+          const value = row[accessorKey as keyof T];
+          return String(value).toLowerCase().includes(lowercasedFilter);
         })
       );
     }
-    
+
     if (filters.length > 0) {
       filtered = filtered.filter(row =>
         filters.every(filter => {
@@ -217,14 +217,14 @@ export const useDataTable = <T,>({
   const setPageIndex = (updater: React.SetStateAction<number>) => {
     const newPageIndex = typeof updater === 'function' ? updater(pageIndex) : updater;
     if (newPageIndex >= 0 && newPageIndex < pageCount) {
-        setPageIndexState(newPageIndex);
+      setPageIndexState(newPageIndex);
     }
   };
 
   useEffect(() => {
-      if(pageIndex >= pageCount && pageCount > 0) {
-          setPageIndex(pageCount - 1);
-      }
+    if (pageIndex >= pageCount && pageCount > 0) {
+      setPageIndex(pageCount - 1);
+    }
   }, [pageIndex, pageCount, setPageIndex]);
 
 
@@ -243,7 +243,7 @@ export const useDataTable = <T,>({
       columns.forEach(col => { if (!(col.id in newVisibility)) { newVisibility[col.id] = true; changed = true; } });
       return changed ? newVisibility : currentVisibility;
     });
-  }, [columns, setColumnOrder, setColumnVisibilityInternal]);
+  }, [columns]);
 
   const toggleColumnVisibility = useCallback((columnId: string) => {
     setColumnVisibilityInternal(prev => ({ ...prev, [columnId]: !prev[columnId] }));
@@ -296,7 +296,7 @@ export const useDataTable = <T,>({
       const rowId = String(getRowId(row));
       return rowSelection[rowId];
     });
-    
+
     setRowSelectionInternal(prev => {
       const newSelection = { ...prev };
       paginatedData.forEach(row => {
@@ -331,7 +331,7 @@ export const useDataTable = <T,>({
     setPageSizeState(size);
     setPageIndex(0);
   };
-  
+
   const pagination = { pageIndex, pageSize };
 
   // Use controlled totalRowCount for manual pagination, otherwise use data length
